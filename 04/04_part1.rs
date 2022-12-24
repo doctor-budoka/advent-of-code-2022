@@ -51,9 +51,9 @@ fn is_full_intersection(range_1: (i32, i32), range_2: (i32, i32)) -> bool {
         return true;
     }
     else if range_1.0 < range_2.0 {
-        return range_1.1 >= range_2.0;
+        return range_1.1 >= range_2.1;
     }
     else {
-        return range_2.1 >= range_1.0;
+        return range_1.1 <= range_2.1;
     }
 }
