@@ -6,19 +6,21 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 
+const SIZE_BOUND: u32 = 100000;
+
 
 struct Directory {
-    name: String ,
-    files: HashMap<String, i32>,
+    _name: String ,
+    files: HashMap<String, u32>,
     directories: HashMap<String, Link>,
     parent: Link,
-    size: Option<i32>,
+    size: Option<u32>,
 }
 
 impl Directory {
     fn new(name: String, parent: Link) -> Directory {
         return Directory {
-            name: name.to_string(), 
+            _name: name.to_string(), 
             files: HashMap::new(), 
             directories: HashMap::new(), 
             parent: parent, 
@@ -26,25 +28,25 @@ impl Directory {
         };
     }
 
-    fn get_size(&mut self) -> i32 {
+    fn get_size(&mut self) -> u32 {
         return match self.size {
             Some(bytes)=>bytes,
             None=>self._calculate_size(),
         };
     }
 
-    fn _calculate_size(&mut self) -> i32 {
-        let mut sum_of_own_files: i32 = 0;
+    fn _calculate_size(&mut self) -> u32 {
+        let mut sum_of_own_files: u32 = 0;
         for (_name, size) in &self.files {
             sum_of_own_files += size;
         }
 
-        let mut sum_of_directories: i32 = 0;
+        let mut sum_of_directories: u32 = 0;
         for (_name, dir) in &self.directories {
-            let this_dir_size: i32 = dir.as_ref().unwrap().borrow_mut().get_size();
+            let this_dir_size: u32 = dir.as_ref().unwrap().borrow_mut().get_size();
             sum_of_directories += this_dir_size;
         }
-        let full_size:i32 = sum_of_own_files + sum_of_directories;
+        let full_size:u32 = sum_of_own_files + sum_of_directories;
         self.size = Some(full_size);
         return full_size;
     }
@@ -92,7 +94,7 @@ impl FileSystem {
             self.add_dir_to_cwd(ls_item[1].to_string());
         }
         else {
-            self.add_file_to_cwd(ls_item[0].to_string(), ls_item[1].parse::<i32>().unwrap());
+            self.add_file_to_cwd(ls_item[1].to_string(), ls_item[0].parse::<u32>().unwrap());
         }
     }
 
@@ -131,12 +133,12 @@ impl FileSystem {
         self.cwd.as_ref().unwrap().borrow_mut().directories.entry(dir_name).or_insert(new_dir);
     }
 
-    fn add_file_to_cwd(&mut self, file_name: String, file_size: i32) {
+    fn add_file_to_cwd(&mut self, file_name: String, file_size: u32) {
         self.cwd.as_ref().unwrap().borrow_mut().files.entry(file_name).or_insert(file_size);
 
     }
 
-    fn get_cwd_size(&mut self) -> i32 {
+    fn get_cwd_size(&mut self) -> u32 {
         return self.cwd.as_ref().unwrap().borrow_mut().get_size();
     }
 }
@@ -151,10 +153,14 @@ fn main() {
     if let Ok(lines) = read_lines(file_name) {
         for line in lines {
             if let Ok(val) = line {
-                file_system.update_file_system(val);
+                file_system.update_file_system(val.trim().to_string());
             }
         }
     }
+
+    file_system.cd("/".to_string());
+    let total: u32 = traverse_fs_and_get_sizes(&mut file_system);
+    println!("Total size of smaller directories: {}", total);
 }
 
 // The output is wrapped in a Result to allow matching on errors
@@ -164,3 +170,25 @@ where P: AsRef<Path>, {
     let file = File::open(filename)?;
     Ok(io::BufReader::new(file).lines())
 }
+
+
+fn traverse_fs_and_get_sizes(fs: &mut FileSystem) -> u32 {
+    let mut dir_vec: Vec<String> = Vec::new();
+    for (dir_name, _) in &fs.cwd.as_ref().unwrap().borrow_mut().directories {
+        dir_vec.push((&dir_name).to_string());
+    }
+
+   let mut total = 0; 
+    for dir_name in dir_vec {
+        fs.cd(dir_name.to_string());
+        total += traverse_fs_and_get_sizes(fs);
+        fs.cd("..".to_string());
+    }
+
+    let current_size = fs.get_cwd_size();
+    if current_size < SIZE_BOUND {
+        total += current_size;
+    }
+    return total;
+}
+
