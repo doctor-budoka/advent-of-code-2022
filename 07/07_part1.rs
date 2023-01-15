@@ -63,6 +63,39 @@ impl FileSystem {
         Self {root: Some(root), cwd: None}
     }
 
+    fn update_file_system(&mut self, val: String) {
+        if val.starts_with("$ cd") {
+            let new_dir: String = val.split(" ").collect::<Vec<&str>>()[2].to_string();
+            self.cd(new_dir);
+        }
+        else if val.starts_with("$ ls") {}
+        else {
+            let ls_item: Vec<&str> = val.split(" ").collect();
+            self.process_ls_item(ls_item);
+        }
+    }
+
+    fn cd(&mut self, dir: String) {
+        if dir == "/" {
+            self.move_to_root();
+        }
+        else if dir == ".." {
+            self.move_to_parent();
+        }
+        else {
+            self.move_to_child(dir);
+        }
+    }
+
+    fn process_ls_item(&mut self, ls_item: Vec<&str>) {
+        if ls_item[0] == "dir" {
+            self.add_dir_to_cwd(ls_item[1].to_string());
+        }
+        else {
+            self.add_file_to_cwd(ls_item[0].to_string(), ls_item[1].parse::<i32>().unwrap());
+        }
+    }
+
     fn move_to_root(&mut self) {
         self.cwd = match &self.root {
             Some(root_link) => Some(Rc::clone(&root_link)),
@@ -116,33 +149,9 @@ fn main() {
     let mut file_system = FileSystem::new();
 
     if let Ok(lines) = read_lines(file_name) {
-        // Consumes the iterator, returns an (Optional) String
         for line in lines {
             if let Ok(val) = line {
-                if val.starts_with("$ cd") {
-                    let new_dir: String = val.split(" ").collect::<Vec<&str>>()[2].to_string();
-                    if new_dir == "/" {
-                        file_system.move_to_root();
-                    }
-                    else if new_dir == ".." {
-                        file_system.move_to_parent();
-                    }
-                    else {
-                        file_system.move_to_child(new_dir);
-                    }
-                }
-                else if val.starts_with("$ ls") {
-                    continue;
-                }
-                else {
-                    let ls_item: Vec<&str> = val.split(" ").collect();
-                    if ls_item[0] == "dir" {
-                        file_system.add_dir_to_cwd(ls_item[1].to_string());
-                    }
-                    else {
-                        file_system.add_file_to_cwd(ls_item[0].to_string(), ls_item[1].parse::<i32>().unwrap());
-                    }
-                }
+                file_system.update_file_system(val);
             }
         }
     }
@@ -155,4 +164,3 @@ where P: AsRef<Path>, {
     let file = File::open(filename)?;
     Ok(io::BufReader::new(file).lines())
 }
-
