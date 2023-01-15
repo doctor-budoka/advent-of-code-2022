@@ -6,6 +6,7 @@ use std::path::Path;
 
 type Visibility = Option<bool>;
 
+#[derive(Copy, Clone)]
 struct Tree {
     height: u32,
     // (from left, from right, from top, from bottom)
@@ -49,7 +50,77 @@ fn main() {
     let width = forest[0].len();
     let length = forest.len();
 
-    println!("forest size: {} {}", width, length);
+    // from left and right
+    for i in 0..length {
+        // from left
+        let mut tallest = forest[i][0].height;
+        forest[i][0].visibility_array.0 = Some(true);
+        for j in 1..width {
+            let mut this_tree = &mut forest[i][j];
+            if this_tree.height > tallest {
+                this_tree.visibility_array.0 = Some(true);
+                tallest = this_tree.height;
+            }
+            else {
+                this_tree.visibility_array.0 = Some(false);
+            }
+        }
+
+        //from right
+        tallest = forest[i][width - 1].height;
+        forest[i][width - 1].visibility_array.1 = Some(true);
+        for j in 1..width {
+            let mut this_tree = &mut forest[i][width - 1 - j];
+            if this_tree.height > tallest {
+                this_tree.visibility_array.1 = Some(true);
+                tallest = this_tree.height;
+            }
+            else {
+                this_tree.visibility_array.1 = Some(false);
+            }
+        }
+    }
+
+    // from top and bottom
+    for j in 0..width {
+        let mut tallest = forest[0][j].height;
+        forest[0][j].visibility_array.2 = Some(true);
+        for i in 1..length {
+            let mut this_tree = &mut forest[i][j];
+            if this_tree.height > tallest {
+                this_tree.visibility_array.2 = Some(true);
+                tallest = this_tree.height;
+            }
+            else {
+                this_tree.visibility_array.2 = Some(false);
+            }
+        }
+
+        //from bottom
+        tallest = forest[length - 1][j].height;
+        forest[length - 1][j].visibility_array.3 = Some(true);
+        for i in 1..length {
+            let mut this_tree = &mut forest[length - 1 - i][j];
+            if this_tree.height > tallest {
+                this_tree.visibility_array.3 = Some(true);
+                tallest = this_tree.height;
+            }
+            else {
+                this_tree.visibility_array.3 = Some(false);
+            }
+        }
+    }
+
+    // counting
+    let mut visible_count = 0;
+    for i in 0..length {
+        for j in 0..width {
+            if forest[i][j].is_visible().expect("is_visible should be fully calculable!") {
+                visible_count += 1;
+            }
+        }
+    }
+    println!("Number of visible trees: {}", visible_count);
 }
 
 // The output is wrapped in a Result to allow matching on errors
