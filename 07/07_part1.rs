@@ -70,29 +70,41 @@ impl FileSystem {
         };
     }
 
+    fn get_cwd_parent(&self) -> Link {
+        return Some(Rc::clone(self.cwd.as_ref().unwrap().borrow().parent.as_ref().unwrap()));
+    }
+
     fn move_to_parent(&mut self) {
-        self.cwd = match self.cwd.as_ref().unwrap().borrow().parent {
+        self.cwd = match &self.get_cwd_parent() {
             Some(parent_link) => Some(Rc::clone(&parent_link)),
-            None=>panic!("Parent directory should exist!")
+            None=>panic!("Parent directory doesn't exists!")
         };
     }
 
+    fn get_cwd_child(&self, name: String) -> Link {
+        return Some(Rc::clone(self.cwd.as_ref().unwrap().borrow().directories.get(&name).unwrap().as_ref().unwrap()))
+    }
+
     fn move_to_child(&mut self, child_name: String) {
-        self.cwd = *self.cwd.unwrap().borrow().directories.get(&child_name).expect("The target dir should exist!");
+        self.cwd = match &self.get_cwd_child(child_name) {
+            Some(child_link) => Some(Rc::clone(&child_link)),
+            None=>panic!("Directory doesn't exist!")
+        };
     }
 
     fn add_dir_to_cwd(&mut self, dir_name: String) {
-        let new_dir: Link = Some(Rc::new(RefCell::new(Directory::new(dir_name.to_string(), self.cwd))));
-        self.cwd.unwrap().borrow_mut().directories.entry(dir_name).or_insert(new_dir);
+        let cwd_to_pass = Some(Rc::clone(&self.cwd.as_ref().unwrap()));
+        let new_dir: Link = Some(Rc::new(RefCell::new(Directory::new(dir_name.to_string(), cwd_to_pass))));
+        self.cwd.as_ref().unwrap().borrow_mut().directories.entry(dir_name).or_insert(new_dir);
     }
 
     fn add_file_to_cwd(&mut self, file_name: String, file_size: i32) {
-        self.cwd.unwrap().borrow_mut().files.entry(file_name).or_insert(file_size);
+        self.cwd.as_ref().unwrap().borrow_mut().files.entry(file_name).or_insert(file_size);
 
     }
 
     fn get_cwd_size(&mut self) -> i32 {
-        return self.cwd.unwrap().borrow_mut().get_size();
+        return self.cwd.as_ref().unwrap().borrow_mut().get_size();
     }
 }
 
