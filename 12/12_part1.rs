@@ -2,7 +2,9 @@ use std::env;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
+use std::collections::{VecDeque, HashSet};
 
+#[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
 struct Coordinate {
     row: usize,
     column: usize,
@@ -14,6 +16,7 @@ impl Coordinate {
     }
 }
 
+#[derive(Debug)]
 struct Position {
     height: u32,
     coordinate: Coordinate,
@@ -32,6 +35,75 @@ impl Position {
             explored: false,
         }
     }
+
+    fn update_prev_in_path(&mut self, node_coord: Coordinate) {
+        self.prev_in_path = Some(node_coord);
+    }
+
+    fn update_distance(&mut self, distance: u32) {
+        self.distance = Some(distance);
+    }
+
+    fn mark_explored(&mut self) {
+        self.explored = true;
+    }
+}
+
+struct Map {
+    positions: Vec<Vec<Position>>,
+    start: Coordinate,
+    end: Coordinate,
+}
+
+impl Map {
+    fn get_map_length(&self) -> usize {
+        return self.positions.len();
+    }
+
+    fn get_map_width(&self) -> usize {
+        return self.positions[0].len();
+    }
+
+    fn get_node_from_coord(&mut self, coord: Coordinate) -> &mut Position {
+        return &mut self.positions[coord.row][coord.column];
+    }
+
+    fn update_prev_in_path_for_coord(&mut self, coord: Coordinate, prev_node_coord: Coordinate) {
+        self.get_node_from_coord(coord).update_prev_in_path(prev_node_coord);
+    }
+
+    fn update_distance_for_coord(&mut self, coord: Coordinate, distance: u32) {
+        self.get_node_from_coord(coord).update_distance(distance);
+    }
+
+    fn mark_explored_for_coord(&mut self, coord: Coordinate) {
+        self.get_node_from_coord(coord).mark_explored();
+    }
+
+    fn get_height_for_coord(&mut self, coord: Coordinate) -> u32 {
+        return self.get_node_from_coord(coord).height;
+    }  
+
+    fn get_distance_for_coord(&mut self, coord: Coordinate) -> Option<u32> {
+        return self.get_node_from_coord(coord).distance;
+    }  
+
+    fn get_prev_in_path_for_coord(&mut self, coord: Coordinate) -> Option<Coordinate> {
+        return self.get_node_from_coord(coord).prev_in_path;
+    }  
+
+    fn get_explored_for_coord(&mut self, coord: Coordinate) -> bool {
+        return self.get_node_from_coord(coord).explored;
+    }  
+
+    fn check_coord_available(&mut self, row: i32, column: i32) -> bool {
+        let coord_exists = (row >= 0) & (column >= 0) & (row < (self.get_map_length() as i32)) & (column < (self.get_map_width() as i32));
+        if coord_exists {
+            let coord = Coordinate::new(row as usize, column as usize);
+            return !self.get_explored_for_coord(coord);
+        }
+        return false;
+    }
 }
 
 
@@ -40,11 +112,13 @@ fn main() {
     let file_name = &env_args[1];
     println!("file name is '{}'", file_name);
 
-    let (mut map, start, end) = initialise_map(file_name);  
+    let map = initialise_map(file_name);
+    let distance_to_end: u32 = get_distance_to_end(map);
+    println!("Distance: {}", distance_to_end);
 } 
 
 
-fn initialise_map(file_name: &String) -> (Vec<Vec<Position>>, Coordinate, Coordinate) {
+fn initialise_map(file_name: &String) -> Map {
     let mut map = Vec::new();
     let mut start: Option<Coordinate> = None;
     let mut end: Option<Coordinate> = None;
@@ -59,7 +133,7 @@ fn initialise_map(file_name: &String) -> (Vec<Vec<Position>>, Coordinate, Coordi
                     let coord = Coordinate::new(row, col);
                     match height_char {
                         'S' => (height, start) = (0, Some(coord)),
-                        'E' => (height, end) = (26, Some(coord)),
+                        'E' => (height, end) = (25, Some(coord)),
                         other => height = other as u32 - 'a' as u32,                        
                     };
                     latitude.push(Position::new(height, row, col));
@@ -67,10 +141,15 @@ fn initialise_map(file_name: &String) -> (Vec<Vec<Position>>, Coordinate, Coordi
                 }
                 map.push(latitude);
                 row += 1;
+                col = 0;
             }
         }
     }
-    return (map, start.expect("This should be initialised"), end.expect("This should be initialised"));
+    return Map {
+        positions: map,
+        start: start.expect("This should be initialised"), 
+        end: end.expect("This should be initialised"),
+    };
 }
 
 
@@ -82,3 +161,51 @@ where P: AsRef<Path>, {
     Ok(io::BufReader::new(file).lines())
 }
 
+fn get_distance_to_end(mut map: Map) -> u32 {
+    let mut current_coord: Coordinate = map.start;
+    let mut queue: VecDeque<Coordinate> = VecDeque::new();
+    let mut queued: HashSet<Coordinate> = HashSet::new();
+
+    loop {
+        let distance = match map.get_prev_in_path_for_coord(current_coord) {
+            Some(coord) => map.get_distance_for_coord(coord).unwrap() + 1,
+            None => 0,
+        };
+        map.update_distance_for_coord(current_coord, distance);
+
+        let next_coords: Vec<Coordinate> = get_next_nodes(&mut map, &current_coord);
+        for coord in next_coords {
+            if !queued.contains(&coord) {
+                map.update_prev_in_path_for_coord(coord, current_coord);
+                queued.insert(coord);
+                queue.push_back(coord);
+            }
+        }
+        map.mark_explored_for_coord(current_coord);
+
+        if (current_coord.row == map.end.row) & (current_coord.column == map.end.column) {
+            break;
+        }
+        current_coord = queue.pop_front().unwrap();
+    }
+    return map.get_distance_for_coord(current_coord).unwrap();
+}
+
+fn get_next_nodes(map: &mut Map, current_coord: &Coordinate) -> Vec<Coordinate> {
+    let mut next_positions: Vec<Coordinate> = Vec::new();
+    let max_height = map.get_height_for_coord(*current_coord) + 1;
+    let curr_row = current_coord.row;
+    let curr_col = current_coord.column;
+
+    for direction in vec![(0, -1), (0, 1), (-1, 0), (1, 0)] {
+        let attempt_row = curr_row as i32 + direction.0;
+        let attempt_col = curr_col as i32 + direction.1;
+        if map.check_coord_available(attempt_row, attempt_col) {
+            let this_coord = Coordinate::new(attempt_row as usize, attempt_col as usize);
+            if map.get_height_for_coord(this_coord) <= max_height {
+                next_positions.push(this_coord);
+            }
+        }
+    }
+    return next_positions;
+}
