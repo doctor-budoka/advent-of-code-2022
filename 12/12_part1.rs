@@ -183,7 +183,7 @@ fn get_distance_to_end(mut map: Map) -> u32 {
         }
         map.mark_explored_for_coord(current_coord);
 
-        if (current_coord.row == map.end.row) & (current_coord.column == map.end.column) {
+        if current_coord == map.end {
             break;
         }
         current_coord = queue.pop_front().unwrap();
