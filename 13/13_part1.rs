@@ -7,13 +7,17 @@ use std::cmp::Ordering;
 enum Data {
     Scalar(u32),
     SubPacket(String),
+    EmptyPacket,
 }
 
 impl Data {
     fn from_string(data: String) -> Data {
-        if data.starts_with("[") {
-            return Data::SubPacket(data[1..data.len()-1].to_string());
+        if data == "" {
+            return Data::EmptyPacket;
         }
+        else if data.starts_with("[") {
+            return Data::SubPacket(data[1..data.len()-1].to_string());
+        } 
         else{
             return Data::Scalar(data.parse::<u32>().unwrap());
         }
@@ -53,6 +57,7 @@ impl Data {
                 other => inner_string.push(other),
             };
         }
+        vec_string.push(inner_string);
         let mut data_vec: Vec<Data> = Vec::new();
         for string in &vec_string {
             data_vec.push(Data::from_string(string.to_string()));
@@ -84,9 +89,12 @@ impl Ord for Data {
     fn cmp(&self, other: &Self) -> Ordering {
         return match (&self, other) { 
             (Data::Scalar(num1), Data::Scalar(num2)) => num1.cmp(num2),
+            (Data::EmptyPacket, Data::EmptyPacket) => Ordering::Equal,
             (Data::SubPacket(sb1), Data::SubPacket(sb2)) => self.compare_string_packets(sb1.to_string(), sb2.to_string()),
             (Data::SubPacket(num), Data::Scalar(sb)) => self.compare_string_packets(num.to_string(), sb.to_string()),
             (Data::Scalar(sb), Data::SubPacket(num)) => self.compare_string_packets(sb.to_string(), num.to_string()),
+            (Data::EmptyPacket, _) => Ordering::Less,
+            (_, Data::EmptyPacket) => Ordering::Greater,
         };
     }
 }
@@ -104,10 +112,10 @@ fn main() {
         let packet_1: Data = Data::from_string(pair_vec[0].trim().to_string());
         let packet_2: Data = Data::from_string(pair_vec[1].trim().to_string());
         if packet_1.cmp(&packet_2) == Ordering::Less {
-            println!("Pair {} is in the correct order", ind);
             correct_inds.push(ind);
         }
         ind += 1;
     }
+    println!("Correct inds: {:?}", correct_inds);
     println!("Sum of correct inds: {}", correct_inds.iter().sum::<u32>());
 } 
