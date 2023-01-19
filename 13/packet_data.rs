@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 
 
-#[derive(PartialOrd, PartialEq, Eq, Debug)]
+#[derive(Debug)]
 pub enum Data {
     Scalar(u32),
     SubPacket(String),
@@ -96,6 +96,16 @@ impl Data {
         }
     }
 }
+
+impl PartialOrd for Data {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {return Some(self.cmp(other));}
+}
+impl PartialEq for Data {
+    fn eq(&self, other: &Self) -> bool {
+        return self.cmp(other) == Ordering::Equal;
+    }
+}
+impl Eq for Data {}
 
 impl Ord for Data {
     fn cmp(&self, other: &Self) -> Ordering {
