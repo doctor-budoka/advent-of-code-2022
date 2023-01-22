@@ -9,6 +9,16 @@ fn main() {
     println!("file name is '{}'", file_name);
     let input = fs::read_to_string(file_name).expect("Should have been able to read the file");
 
+    let (vertices, valves) = read_input_to_hashmaps(input);
+
+    println!("Vertices: {:?}", vertices);
+    println!("Valves: {:?}", valves);
+
+    let best_score: u32 = get_best_path_score(vertices, valves);
+    println!("Most pressure released: {}", best_score);
+} 
+
+fn read_input_to_hashmaps(input: String) -> (HashMap<String, Vec<String>>, HashMap<String, u32>) {
     let mut vertices: HashMap<String, Vec<String>> = HashMap::new();
     let mut valves: HashMap<String, u32> = HashMap::new();
     for line in input.trim().lines().collect::<Vec<&str>>() {
@@ -39,6 +49,9 @@ fn main() {
             valves.insert(this_node, flow_rate);
         }
     }
-    println!("Vertices: {:?}", vertices);
-    println!("Valves: {:?}", valves);
-} 
+    return (vertices, valves);
+}
+
+fn get_best_path_score(vertices: HashMap<String, Vec<String>>, valves: HashMap<String, u32>) -> u32 {
+    return 5;
+}
