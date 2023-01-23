@@ -30,11 +30,6 @@ impl Path {
     fn get_current_node(&self) -> String {
         return self.current_node.to_string();
     }
-
-    fn get_copy(&self) -> Path {
-        let path_copy: Vec<String> = self.path.iter().map(|x| x.to_string()).collect();
-        return Path::new(&self.current_node, self.time_elapsed, self.current_score, self.pressure, &path_copy);
-    }
     
     fn get_updated_path(&self, new_node: &String, valve_pressure: u32, distance: u32) -> Path {
         let mut new_path: Vec<String> =  self.path.iter().map(|x| x.to_string()).collect();
@@ -52,6 +47,12 @@ impl Path {
         return HashSet::from_iter(self.path.iter().map(|x| x.to_string()));
     }
 
+    fn valves_on(&self) -> HashSet<String> {
+        let mut new_set: HashSet<String> = HashSet::from_iter(self.path.iter().map(|x| x.to_string()));
+        new_set.remove(&"AA".to_string());
+        return new_set;
+    }
+
     fn score_at_time(&self) -> u32 {
         let time_left: u32 = MAX_TIME - self.time_elapsed;
         return self.current_score + (time_left * self.pressure);
@@ -60,21 +61,29 @@ impl Path {
 
 #[derive(Debug)]
 struct PathTimes {
-    times: HashMap<String,u32>,
-    nodes: HashMap<String, HashSet<String>>,
+    scores: HashMap<String,u32>,
+    valves: HashMap<String, HashSet<String>>,
 }
 
 impl PathTimes {
     fn new() -> PathTimes {
-        return PathTimes {times: HashMap::new(), nodes: HashMap::new()};
+        return PathTimes {scores: HashMap::new(), valves: HashMap::new()};
     }
 
     fn add_path(&mut self, path: &Path) {
         let string_path = path.path.join(",");
-        if !self.times.contains_key(&string_path) {
-            self.times.insert((&string_path).to_string(), path.score_at_time());
-            self.nodes.insert((&string_path).to_string(), path.nodes_visited());
+        if !self.scores.contains_key(&string_path) {
+            self.scores.insert((&string_path).to_string(), path.score_at_time());
+            self.valves.insert((&string_path).to_string(), path.valves_on());
         }
+    }
+
+    fn get_score(&self, path: &String) -> u32 {
+        return *self.scores.get(path).unwrap();
+    }
+
+    fn get_valves(&self, path: &String) -> HashSet<String> {
+        return HashSet::from_iter(self.valves.get(path).unwrap().iter().map(|x| x.to_string()));
     }
 }
 
@@ -93,10 +102,32 @@ fn main() {
     println!("Valves: {:?}\n", valves);
 
     let path_scores: BoxedPathTimes = get_path_scores(vertices, valves);
-    println!("Path scores: {:?}", path_scores);
+    println!("Path scores: {:?}", path_scores.as_ref().borrow().scores.keys().len());
 
-    // println!("Winning path: {:?}", best_path);
-    // println!("Most pressure released: {}", best_path.score_at_time());
+    let mut paths: Vec<String> = path_scores.as_ref().borrow().scores.keys().map(|x| x.to_string()).collect();
+    paths.sort_by(|a, b| path_scores.as_ref().borrow().get_score(&b).cmp(&path_scores.as_ref().borrow().get_score(&a)));
+    let best_single_path_score = path_scores.as_ref().borrow().get_score(&paths[0]);
+
+    let mut best_score = 0;
+    for (i, path1) in paths.iter().enumerate() {
+        let nodes1 = path_scores.as_ref().borrow().get_valves(&path1);
+        let score1 = path_scores.as_ref().borrow().get_score(&path1);
+        let score2_bound = if best_score > score1 {best_score - score1} else {0};
+        if score2_bound > best_single_path_score{continue;}
+        for (j, path2) in paths.iter().enumerate() {
+            if j <= i {continue;}
+            let score2 = path_scores.as_ref().borrow().get_score(&path2);
+            if score2 <= score2_bound {continue;}
+            let nodes2 = path_scores.as_ref().borrow().get_valves(&path2);
+            if nodes1.intersection(&nodes2).count() > 0 {continue;}
+
+            best_score = score1 + score2;
+            break;
+        }
+        if i % 100 == 0 {println!("{}", i);} 
+    }
+
+    println!("Most pressure released: {}", best_score);
 } 
 
 fn read_input_to_hashmaps(input: String) -> (HashMap<String, Vec<String>>, HashMap<String, u32>) {
@@ -205,7 +236,7 @@ fn dfs_for_best(edge_weights: HashMap<(String, String), u32>, valves: HashMap<St
     let path = Path::new(&start, 0, 0, 0, &vec!["AA".to_string()]);
     
     let path_times: BoxedPathTimes = Rc::new(RefCell::new(PathTimes::new()));
-    path_times.add_path(&path);
+    path_times.as_ref().borrow_mut().add_path(&path);
     dfs(path, &edge_weights, &valves, &mut path_times.as_ref().borrow_mut());
     return path_times;
 }
