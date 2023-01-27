@@ -10,7 +10,7 @@ pub enum ResourceType {
 }
 
 impl ResourceType {
-    pub fn from_string(string: &String) -> Result<ResourceType, String> {
+    pub fn from_string(string: &String) -> Result<Self, String> {
         return match &string.to_string().to_lowercase()[..] {
             "ore" => Ok(ResourceType::Ore),
             "clay" => Ok(ResourceType::Clay),
@@ -27,6 +27,10 @@ impl ResourceType {
             ResourceType::Obsidian => "obsidian".to_string(),
             ResourceType::Geode => "geode".to_string(),
         };
+    }
+
+    pub fn iter() -> Iter<Self> {
+        return vec![Self::Ore, Self::Clay, Self::Obsidian, Self::Geode].iter();
     }
 }
 
@@ -75,6 +79,10 @@ impl ResourceTally {
         ])
     }
 
+    pub fn copy_tally(&self) -> Self {
+        return Self::from_hashmap(self.as_hashmap);
+    }
+
     pub fn update_resource_from_string(&mut self, resource_type_str: &String, amount: u32) {
         if let Ok(resource_type) = ResourceType::from_string(resource_type_str) {
             self.update_resource(resource_type, amount);
@@ -92,6 +100,12 @@ impl ResourceTally {
             ResourceType::Geode => self.geode = amount,
         };
     }
+
+    pub fn new_tally_with_added_resource(&self, resource_type: Self, amount: u32) -> Self {
+        let mut current_resource_as_hashmap = self.as_hashmap();
+        current_resource_as_hashmap[resource_type] += amount;
+        return Self::from_hashmap(current_resource_as_hashmap);
+    }
 }
 
 impl Add for ResourceTally { 
@@ -106,12 +120,23 @@ impl Add for ResourceTally {
     }
 }
 
+impl Sub for ResourceTally { 
+    type Output = Self;
+    fn sub(self, other: Self) -> Self {
+        return Self::from_tallies(
+            self.ore - other.ore, 
+            self.clay - other.clay, 
+            self.obsidian - other.obsidian,
+            self.geode - other.geode,
+        )
+    }
+}
+
 #[derive(Debug)]
 pub struct State {
     time_left: u32,
     resources: ResourceTally,
     robots: ResourceTally,
-    robots_in_production: ResourceTally,
 }
 
 impl State {
@@ -122,18 +147,13 @@ impl State {
             time_left: 24, 
             resources: ResourceTally::new(), 
             robots: robot_tally,
-            robots_in_production: ResourceTally::new(),
         }
     }
 
-    pub fn create_robots(&mut self) {
-        self.robots = self.robots + self.robots_in_production;
-        self.robots_in_production = ResourceTally::new();
-    }
-
-    pub fn update(&mut self) {
+    pub fn new_state(&self, robots_to_produce: ResourceTally, cost: ResourceTally) -> State {
         self.time_left -= 1;
-        self.resources = self.resources + self.robots;
+        self.resources = self.resources + self.robots - cost;
+        self.robots = self.robots + robots_to_produce 
         self.create_robots();
     }
 }

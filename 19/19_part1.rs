@@ -1,6 +1,6 @@
 use std::env;
 use std::fs;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque, HashSet};
 
 mod state_and_blueprints;
 use state_and_blueprints::{Blueprint, ResourceType, ResourceTally};
@@ -13,6 +13,14 @@ fn main() {
     let input = fs::read_to_string(file_name).expect("Should have been able to read the file");
     let blueprints = get_blueprints_from_input(input);
     println!("{:?}", blueprints);
+
+    let mut total_quality: u32 = 0;
+    for blueprint in blueprints {
+        let bid: u32 = blueprint.index;
+        let best_for_blueprint = get_best_value_from_blueprint(blueprint);
+        total_quality += bid * best_for_blueprint;
+    }
+    println!("Total quality: {}", total_quality);
 } 
 
 fn get_blueprints_from_input(input: String) -> Vec<Blueprint> {
@@ -43,4 +51,76 @@ fn get_blueprints_from_input(input: String) -> Vec<Blueprint> {
         blueprints.push(blueprint);
     }
     return blueprints;
+}
+
+
+fn get_best_value_from_blueprint(blueprint: Blueprint) {
+    let mut this_state: State = State::new();
+    let mut states_done: HashSet<State> = HashSet::new();
+    let mut queued: HashSet<State> = HashSet::new();
+    let mut queue: VecDeque<State> = Vec::new();
+    let mut max_geode:u32 = 0;
+
+    loop {
+        let new_states: Vec<State> = get_potential_states(this_state, blueprint);
+        for next_state in &new_states {
+            let already_explored: bool = states_done.contains(&next_state);
+            let already_queued: bool = queued.contains(&next_state);
+            if !already_explored && !already_queued {
+                queued.insert(next_state);
+                queue.push_back(next_state);
+            }
+        }
+        max_geode = max(max_geode, this_state.resources.geode);
+        states_done.insert(this_state);
+
+        match queue.pop_front() {
+            Some(new_state) => this_state = new_state,
+            None => break,
+        };
+    }
+    return max_geode;
+}
+
+fn potential_states(current_state: &State, blueprint: &Blueprint) -> Vec<State> {
+    let mut robots_to_produce = Vec<ResourceTally>: Vec::new();
+
+    let mut explored: HashSet<ResourceTally> = HashSet::new();
+    let mut queued: HashSet<ResourceTally> = HashSet::new();
+    let mut queue: VecDeque<ResourceTally> = Vec::new();
+    let mut resources_lookup: HashMap<ResourceTally, ResourceTally> = HashMap::new();
+
+    let current_resources = current_state.resources.copy_tally();
+    let mut this_robot_tally: ResourceTally = ResourceTally::new();
+    resources_lookup.insert(this_tally, current_resources);
+    loop {
+        let this_resources = resources_lookup.get(&this_tally);
+        let choices = potential_new_robots(this_resources, blueprint);
+        for choice in choices {
+            let resources_left = this_resources - blueprint.get(choice).unwrap();
+            let new_tally = this_robot_tally.new_tally_with_added_resource(choice, 1);
+            if !queued.contains(new_tally) and !explored.contains(new_tally) {
+                resources_lookup.insert(new_tally, resources_left);
+                queued.insert(new_tally);
+                queue.push_back(new_tally);
+            }
+        }
+        explored.insert(this_robot_tally)
+
+        match queue.pop_front() {
+            Some(new_robot_tally) => this_robot_tally = new_robot_tally,
+            None => break,
+        }
+    }
+}
+
+fn potential_new_robots(resources: &ResourceTally, blueprint: &Blueprint) -> Vec<ResourceType> {
+    let mut output = Vec::new();
+    for resource_type in ResourceType::iter() {
+        let cost = Blueprint.get(&resource_type).unwrap();
+        if cost < current_resources {
+            output.push(resource_type);
+        }
+    }
+    return output;
 }
