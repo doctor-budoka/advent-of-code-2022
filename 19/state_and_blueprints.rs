@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::ops::Add;
 use std::ops::Sub;
+use std::cmp::Ordering;
 
 #[derive(Eq, Hash, PartialEq, Debug)]
 pub enum ResourceType {
@@ -35,7 +36,7 @@ impl ResourceType {
     }
 }
 
-#[derive(Eq, Hash, PartialEq, PartialOrd, Copy, Clone, Debug)]
+#[derive(Eq, Hash, Copy, Clone, Debug)]
 pub struct ResourceTally {
     ore: u32,
     clay: u32,
@@ -147,6 +148,35 @@ impl Sub for ResourceTally {
     }
 }
 
+impl PartialOrd for ResourceTally {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        let ore_cmp = self.ore.cmp(&other.ore);
+        let clay_cmp = self.clay.cmp(&other.clay);
+        let obs_cmp = self.obsidian.cmp(&other.obsidian);
+        let geode_cmp = self.geode.cmp(&other.geode);
+    
+        if (ore_cmp == clay_cmp) && (ore_cmp == obs_cmp) && (ore_cmp == geode_cmp) {
+            return Some(ore_cmp);
+        }
+        else if (ore_cmp != Ordering::Greater) && (clay_cmp != Ordering::Greater) && (obs_cmp != Ordering::Greater) && (geode_cmp != Ordering::Greater) {
+            return Some(Ordering::Less);
+        }
+        else if (ore_cmp != Ordering::Less) && (clay_cmp != Ordering::Less) && (obs_cmp != Ordering::Less) && (geode_cmp != Ordering::Less) {
+            return Some(Ordering::Greater);
+        }
+        else {
+            return None;
+        }
+    }
+}
+
+impl PartialEq for ResourceTally {
+    fn eq(&self, other: &Self) -> bool {
+        return self.partial_cmp(other) == Some(Ordering::Equal);
+    }
+}
+
+
 #[derive(Debug, Eq, Hash, PartialEq, Copy, Clone)]
 pub struct State {
     time_left: u32,
@@ -183,6 +213,10 @@ impl State {
 
     pub fn copy_current_resources(&self) -> ResourceTally {
         return self.resources.copy_tally();
+    }
+
+    pub fn get_time_left(&self) -> u32 {
+        return self.time_left;
     }
 }
 

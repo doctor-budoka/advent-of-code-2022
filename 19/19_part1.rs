@@ -84,6 +84,9 @@ fn get_best_value_from_blueprint(blueprint: Blueprint) -> u32 {
 }
 
 fn get_potential_states(current_state: &State, blueprint: &Blueprint) -> Vec<State> {
+    if current_state.get_time_left() == 0 {
+        return Vec::new();
+    }
     let mut explored: HashSet<ResourceTally> = HashSet::new();
     let mut queued: HashSet<ResourceTally> = HashSet::new();
     let mut queue: VecDeque<ResourceTally> = VecDeque::new();
@@ -124,7 +127,7 @@ fn get_potential_new_robots(resources: &ResourceTally, blueprint: &Blueprint) ->
     let mut output = Vec::new();
     for resource_type in ResourceType::resource_types() {
         let cost = blueprint.get_costs(&resource_type);
-        if cost < *resources {
+        if cost <= *resources {
             output.push(resource_type);
         }
     }
