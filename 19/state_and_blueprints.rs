@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::ops::Add;
+use std::ops::Sub;
 
 #[derive(Eq, Hash, PartialEq, Debug)]
 pub enum ResourceType {
@@ -29,12 +30,12 @@ impl ResourceType {
         };
     }
 
-    pub fn iter() -> Iter<Self> {
-        return vec![Self::Ore, Self::Clay, Self::Obsidian, Self::Geode].iter();
+    pub fn resource_types() -> Vec<Self> {
+        return vec![Self::Ore, Self::Clay, Self::Obsidian, Self::Geode];
     }
 }
 
-#[derive(Eq, Hash, PartialEq, Copy, Clone, Debug)]
+#[derive(Eq, Hash, PartialEq, PartialOrd, Copy, Clone, Debug)]
 pub struct ResourceTally {
     ore: u32,
     clay: u32,
@@ -80,7 +81,7 @@ impl ResourceTally {
     }
 
     pub fn copy_tally(&self) -> Self {
-        return Self::from_hashmap(self.as_hashmap);
+        return Self::from_hashmap(self.as_hashmap());
     }
 
     pub fn update_resource_from_string(&mut self, resource_type_str: &String, amount: u32) {
@@ -101,10 +102,24 @@ impl ResourceTally {
         };
     }
 
-    pub fn new_tally_with_added_resource(&self, resource_type: Self, amount: u32) -> Self {
+    pub fn new_tally_with_added_resource(&self, resource_type: ResourceType, amount: u32) -> Self {
         let mut current_resource_as_hashmap = self.as_hashmap();
-        current_resource_as_hashmap[resource_type] += amount;
+        let new_amount = current_resource_as_hashmap[&resource_type] + amount;
+        current_resource_as_hashmap.insert(resource_type, new_amount);
         return Self::from_hashmap(current_resource_as_hashmap);
+    }
+
+    pub fn scalar_mult(&self, scalar: u32) -> ResourceTally {
+        return Self{ore: scalar * self.ore, clay: scalar * self.clay, obsidian: scalar * self.obsidian, geode: scalar * self.geode};
+    }
+
+    pub fn get_amount(&self, resource_type: &ResourceType) -> u32 {
+        return match resource_type {
+            ResourceType::Ore => self.ore,
+            ResourceType::Clay => self.clay,
+            ResourceType::Obsidian => self.obsidian,
+            ResourceType::Geode => self.geode,
+        };
     }
 }
 
@@ -132,7 +147,7 @@ impl Sub for ResourceTally {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, Hash, PartialEq, Copy, Clone)]
 pub struct State {
     time_left: u32,
     resources: ResourceTally,
@@ -150,11 +165,24 @@ impl State {
         }
     }
 
-    pub fn new_state(&self, robots_to_produce: ResourceTally, cost: ResourceTally) -> State {
-        self.time_left -= 1;
-        self.resources = self.resources + self.robots - cost;
-        self.robots = self.robots + robots_to_produce 
-        self.create_robots();
+    pub fn create_updated_state(&self, robots_to_produce: ResourceTally, cost: ResourceTally) -> State {
+        return State {
+            time_left: self.time_left - 1,
+            resources: self.resources + self.robots - cost,
+            robots: self.robots + robots_to_produce,
+        }
+    }
+
+    pub fn get_resource_amount(&self, resource_type: &ResourceType) -> u32 {
+        return self.resources.get_amount(resource_type)
+    }
+
+    pub fn get_current_resources(&self) -> ResourceTally {
+        return self.resources;
+    }
+
+    pub fn copy_current_resources(&self) -> ResourceTally {
+        return self.resources.copy_tally();
     }
 }
 
@@ -162,11 +190,26 @@ impl State {
 pub struct Blueprint {
     index: u32,
     costs: HashMap<ResourceType, ResourceTally>,
-    best_value: u32,
 }
 
 impl Blueprint {
     pub fn new(index: u32, costs: HashMap<ResourceType, ResourceTally>) -> Blueprint {
-        return Blueprint {index: index, costs: costs, best_value: 0};
+        return Blueprint {index: index, costs: costs};
+    }
+
+    pub fn get_costs(&self, robot_type: &ResourceType) -> ResourceTally {
+        return *self.costs.get(robot_type).unwrap();
+    }
+
+    pub fn get_total_cost(&self, robots: &ResourceTally) -> ResourceTally {
+        let mut total_cost: ResourceTally = ResourceTally::new();
+        for (robot_type, amount)  in robots.as_hashmap(){
+            total_cost = total_cost + self.get_costs(&robot_type).scalar_mult(amount);
+        }
+        return total_cost;
+    }
+
+    pub fn get_index(&self) -> u32 {
+        return self.index;
     }
 }
