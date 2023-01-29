@@ -4,6 +4,8 @@ use std::ops::Sub;
 use std::cmp::Ordering;
 use std::cmp::max;
 
+const MAX_TIME: u32 = 24;
+
 #[derive(Eq, Hash, PartialEq, Debug, Copy, Clone)]
 pub enum ResourceType {
     Ore,
@@ -190,7 +192,7 @@ impl State {
         let mut robot_tally = ResourceTally::new();
         robot_tally.ore = 1;
         return State {
-            time_left: 24, 
+            time_left: MAX_TIME, 
             resources: ResourceTally::new(), 
             robots: robot_tally,
         }
@@ -230,6 +232,7 @@ pub struct Blueprint {
     index: u32,
     costs: HashMap<ResourceType, ResourceTally>,
     max_costs: ResourceTally,
+    max_geode_count: u32,
 }
 
 impl Blueprint {
@@ -243,7 +246,7 @@ impl Blueprint {
             max_obsidian = max(max_obsidian, resource_tally.get_amount(&ResourceType::Obsidian));
         }
         let max_costs = ResourceTally {ore: max_ore, clay: max_clay, obsidian: max_obsidian, geode: 0};
-        return Blueprint {index: index, costs: costs, max_costs: max_costs};
+        return Blueprint {index: index, costs: costs, max_costs: max_costs, max_geode_count: 0};
     }
 
     pub fn get_costs(&self, robot_type: &ResourceType) -> ResourceTally {
@@ -264,5 +267,13 @@ impl Blueprint {
 
     pub fn get_max_resource_cost(&self, resource_type: &ResourceType) -> u32 {
         return self.max_costs.get_amount(resource_type);
-    } 
+    }
+
+    pub fn update_max_geode_count_for_blueprint(&mut self, new_amount: u32) {
+        self.max_geode_count = max(self.max_geode_count, new_amount);
+    }
+
+    pub fn get_best_value_from_blueprint(&self) -> u32 {
+        return self.max_geode_count;
+    }
 }

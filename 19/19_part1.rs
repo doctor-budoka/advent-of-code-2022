@@ -1,7 +1,8 @@
 use std::env;
 use std::fs;
-use std::collections::{HashMap, VecDeque, HashSet};
-use std::cmp::max;
+use std::collections::HashMap;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 mod state_and_blueprints;
 use state_and_blueprints::{Blueprint, ResourceType, ResourceTally, State};
@@ -13,14 +14,13 @@ fn main() {
     println!("File name is '{}'. Reading input...", file_name);
     let input = fs::read_to_string(file_name).expect("Should have been able to read the file");
     let blueprints = get_blueprints_from_input(input);
-    println!("{:?}", blueprints);
 
     let mut total_quality: u32 = 0;
     for blueprint in blueprints {
         let bid: u32 = blueprint.get_index();
         let best_for_blueprint = get_best_value_from_blueprint(blueprint);
+        println!("{}: {}", bid, best_for_blueprint);
         total_quality += bid * best_for_blueprint;
-        break;
     }
     println!("Total quality: {}", total_quality);
 } 
@@ -55,34 +55,26 @@ fn get_blueprints_from_input(input: String) -> Vec<Blueprint> {
     return blueprints;
 }
 
-
 fn get_best_value_from_blueprint(blueprint: Blueprint) -> u32 {
-    let mut this_state: State = State::new();
-    let mut states_done: HashSet<State> = HashSet::new();
-    let mut queued: HashSet<State> = HashSet::new();
-    let mut queue: VecDeque<State> = VecDeque::new();
-    let mut max_geode:u32 = 0;
+    let this_state: State = State::new();
+    let mut previous_states: HashMap<State, Option<State>> = HashMap::from([(this_state, None)]);
+    let shareable_blueprint: Rc<RefCell<Blueprint>> = Rc::new(RefCell::new(blueprint));
+    dfs(this_state, &mut shareable_blueprint.as_ref().borrow_mut(), &mut previous_states);
 
-    loop {
-        // println!("{:?}", this_state);
-        let new_states: Vec<State> = get_potential_states(&this_state,& blueprint);
-        for next_state in &new_states {
-            let already_explored: bool = states_done.contains(&next_state);
-            let already_queued: bool = queued.contains(&next_state);
-            if !already_explored && !already_queued {
-                queued.insert(*next_state);
-                queue.push_back(*next_state);
-            }
+    return shareable_blueprint.as_ref().borrow().get_best_value_from_blueprint();
+}
+
+fn dfs(state: State, blueprint: &mut Blueprint, previous_states: &mut HashMap<State, Option<State>>) {
+    let new_states: Vec<State> = get_potential_states(&state, &blueprint);
+    let shareable_blueprint: Rc<RefCell<&mut Blueprint>> = Rc::new(RefCell::new(blueprint));
+    println!("{:?}", &state);
+    for next_state in &new_states {
+        if !previous_states.contains_key(next_state) {
+            dfs(*next_state, &mut shareable_blueprint.as_ref().borrow_mut(), previous_states);
+            previous_states.insert(*next_state, Some(state));
         }
-        max_geode = max(max_geode, this_state.get_resource_amount(&ResourceType::Geode));
-        states_done.insert(this_state);
-
-        match queue.pop_front() {
-            Some(new_state) => this_state = new_state,
-            None => break,
-        };
     }
-    return max_geode;
+    blueprint.update_max_geode_count_for_blueprint(state.get_resource_amount(&ResourceType::Geode));
 }
 
 fn get_potential_states(current_state: &State, blueprint: &Blueprint) -> Vec<State> {
@@ -92,9 +84,7 @@ fn get_potential_states(current_state: &State, blueprint: &Blueprint) -> Vec<Sta
     }
     let potential_robots_to_build = get_potential_new_robots(&current_state.get_current_resources(), blueprint);
     let unchanged_state = current_state.create_updated_state(ResourceTally::new(), ResourceTally::new());
-    let max_ore_bots = blueprint.get_max_resource_cost(&ResourceType::Ore);
-    let max_clay_bots = blueprint.get_max_resource_cost(&ResourceType::Clay);
-    let max_obsidian_bots = blueprint.get_max_resource_cost(&ResourceType::Obsidian);
+
     potential_states.push(unchanged_state);
     for new_robot_type in potential_robots_to_build {
         let new_tally = ResourceTally::new().new_tally_with_added_resource(&new_robot_type, 1);
@@ -102,46 +92,6 @@ fn get_potential_states(current_state: &State, blueprint: &Blueprint) -> Vec<Sta
         if (new_robot_type == ResourceType::Geode) || (new_state.get_num_robots(&new_robot_type) <= blueprint.get_max_resource_cost(&new_robot_type)) {
             potential_states.push(new_state);
         }
-    }
-    return potential_states;
-}
-
-fn get_potential_states_assuming_multiple_bots_per_minute(current_state: &State, blueprint: &Blueprint) -> Vec<State> {
-    if current_state.get_time_left() == 0 {
-        return Vec::new();
-    }
-    let mut explored: HashSet<ResourceTally> = HashSet::new();
-    let mut queued: HashSet<ResourceTally> = HashSet::new();
-    let mut queue: VecDeque<ResourceTally> = VecDeque::new();
-    let mut resources_lookup: HashMap<ResourceTally, ResourceTally> = HashMap::new();
-
-    let current_resources = current_state.get_current_resources();
-    let mut this_robot_tally: ResourceTally = ResourceTally::new();
-    resources_lookup.insert(this_robot_tally, current_resources);
-    loop {
-        let this_resources = *resources_lookup.get(&this_robot_tally).unwrap();
-        let choices = get_potential_new_robots(&this_resources, blueprint);
-        for choice in choices {
-            let resources_left = this_resources - blueprint.get_costs(&choice);
-            let new_tally = this_robot_tally.new_tally_with_added_resource(&choice, 1);
-            if !queued.contains(&new_tally) && !explored.contains(&new_tally) {
-                resources_lookup.insert(new_tally, resources_left);
-                queued.insert(new_tally);
-                queue.push_back(new_tally);
-            }
-        }
-        explored.insert(this_robot_tally);
-
-        match queue.pop_front() {
-            Some(new_robot_tally) => this_robot_tally = new_robot_tally,
-            None => break,
-        }
-    }
-
-    let mut potential_states: Vec<State> = Vec::new();
-    for new_robots in explored {
-        let new_state = current_state.create_updated_state(new_robots, blueprint.get_total_cost(&new_robots));
-        potential_states.push(new_state);
     }
     return potential_states;
 }
