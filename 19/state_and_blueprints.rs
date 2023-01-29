@@ -2,8 +2,9 @@ use std::collections::HashMap;
 use std::ops::Add;
 use std::ops::Sub;
 use std::cmp::Ordering;
+use std::cmp::max;
 
-#[derive(Eq, Hash, PartialEq, Debug)]
+#[derive(Eq, Hash, PartialEq, Debug, Copy, Clone)]
 pub enum ResourceType {
     Ore,
     Clay,
@@ -103,10 +104,10 @@ impl ResourceTally {
         };
     }
 
-    pub fn new_tally_with_added_resource(&self, resource_type: ResourceType, amount: u32) -> Self {
+    pub fn new_tally_with_added_resource(&self, resource_type: &ResourceType, amount: u32) -> Self {
         let mut current_resource_as_hashmap = self.as_hashmap();
         let new_amount = current_resource_as_hashmap[&resource_type] + amount;
-        current_resource_as_hashmap.insert(resource_type, new_amount);
+        current_resource_as_hashmap.insert(*resource_type, new_amount);
         return Self::from_hashmap(current_resource_as_hashmap);
     }
 
@@ -218,17 +219,31 @@ impl State {
     pub fn get_time_left(&self) -> u32 {
         return self.time_left;
     }
+
+    pub fn get_num_robots(&self, resource_type: &ResourceType) -> u32 {
+        return self.robots.get_amount(resource_type);
+    }
 }
 
 #[derive(Debug)]
 pub struct Blueprint {
     index: u32,
     costs: HashMap<ResourceType, ResourceTally>,
+    max_costs: ResourceTally,
 }
 
 impl Blueprint {
     pub fn new(index: u32, costs: HashMap<ResourceType, ResourceTally>) -> Blueprint {
-        return Blueprint {index: index, costs: costs};
+        let mut max_ore: u32 = 0;
+        let mut max_clay: u32 = 0;
+        let mut max_obsidian: u32 = 0;
+        for (_, resource_tally) in &costs {
+            max_ore = max(max_ore, resource_tally.get_amount(&ResourceType::Ore));
+            max_clay = max(max_clay, resource_tally.get_amount(&ResourceType::Clay));
+            max_obsidian = max(max_obsidian, resource_tally.get_amount(&ResourceType::Obsidian));
+        }
+        let max_costs = ResourceTally {ore: max_ore, clay: max_clay, obsidian: max_obsidian, geode: 0};
+        return Blueprint {index: index, costs: costs, max_costs: max_costs};
     }
 
     pub fn get_costs(&self, robot_type: &ResourceType) -> ResourceTally {
@@ -246,4 +261,8 @@ impl Blueprint {
     pub fn get_index(&self) -> u32 {
         return self.index;
     }
+
+    pub fn get_max_resource_cost(&self, resource_type: &ResourceType) -> u32 {
+        return self.max_costs.get_amount(resource_type);
+    } 
 }

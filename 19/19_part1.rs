@@ -20,6 +20,7 @@ fn main() {
         let bid: u32 = blueprint.get_index();
         let best_for_blueprint = get_best_value_from_blueprint(blueprint);
         total_quality += bid * best_for_blueprint;
+        break;
     }
     println!("Total quality: {}", total_quality);
 } 
@@ -63,6 +64,7 @@ fn get_best_value_from_blueprint(blueprint: Blueprint) -> u32 {
     let mut max_geode:u32 = 0;
 
     loop {
+        // println!("{:?}", this_state);
         let new_states: Vec<State> = get_potential_states(&this_state,& blueprint);
         for next_state in &new_states {
             let already_explored: bool = states_done.contains(&next_state);
@@ -84,6 +86,27 @@ fn get_best_value_from_blueprint(blueprint: Blueprint) -> u32 {
 }
 
 fn get_potential_states(current_state: &State, blueprint: &Blueprint) -> Vec<State> {
+    let mut potential_states: Vec<State> = Vec::new();
+    if current_state.get_time_left() == 0 {
+        return potential_states;
+    }
+    let potential_robots_to_build = get_potential_new_robots(&current_state.get_current_resources(), blueprint);
+    let unchanged_state = current_state.create_updated_state(ResourceTally::new(), ResourceTally::new());
+    let max_ore_bots = blueprint.get_max_resource_cost(&ResourceType::Ore);
+    let max_clay_bots = blueprint.get_max_resource_cost(&ResourceType::Clay);
+    let max_obsidian_bots = blueprint.get_max_resource_cost(&ResourceType::Obsidian);
+    potential_states.push(unchanged_state);
+    for new_robot_type in potential_robots_to_build {
+        let new_tally = ResourceTally::new().new_tally_with_added_resource(&new_robot_type, 1);
+        let new_state = current_state.create_updated_state(new_tally, blueprint.get_total_cost(&new_tally));
+        if (new_robot_type == ResourceType::Geode) || (new_state.get_num_robots(&new_robot_type) <= blueprint.get_max_resource_cost(&new_robot_type)) {
+            potential_states.push(new_state);
+        }
+    }
+    return potential_states;
+}
+
+fn get_potential_states_assuming_multiple_bots_per_minute(current_state: &State, blueprint: &Blueprint) -> Vec<State> {
     if current_state.get_time_left() == 0 {
         return Vec::new();
     }
@@ -100,7 +123,7 @@ fn get_potential_states(current_state: &State, blueprint: &Blueprint) -> Vec<Sta
         let choices = get_potential_new_robots(&this_resources, blueprint);
         for choice in choices {
             let resources_left = this_resources - blueprint.get_costs(&choice);
-            let new_tally = this_robot_tally.new_tally_with_added_resource(choice, 1);
+            let new_tally = this_robot_tally.new_tally_with_added_resource(&choice, 1);
             if !queued.contains(&new_tally) && !explored.contains(&new_tally) {
                 resources_lookup.insert(new_tally, resources_left);
                 queued.insert(new_tally);
