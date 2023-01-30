@@ -106,3 +106,13 @@ fn get_potential_new_robots(resources: &ResourceTally, blueprint: &Blueprint) ->
     }
     return output;
 }
+
+fn max_potential_geodes(state: &State) -> u32 {
+    let time_left: u32 = state.get_time_left();
+    let current_geodes: u32 = state.get_resource_amount(&ResourceType::Geode);
+    let current_geode_bots: u32 = state.get_num_robots(&ResourceType::Geode);
+    let geodes_at_current_rate: u32 = current_geodes + (current_geode_bots * time_left);
+
+    let max_potential_extra_geodes: u32 = time_left * (time_left - 1) / 2;
+    return geodes_at_current_rate + max_potential_extra_geodes;
+}
