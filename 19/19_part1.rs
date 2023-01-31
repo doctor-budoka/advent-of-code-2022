@@ -18,9 +18,12 @@ fn main() {
     let mut total_quality: u32 = 0;
     for blueprint in blueprints {
         let bid: u32 = blueprint.get_index();
+        println!("Looking at blueprint number {}", bid);
         let best_for_blueprint = get_best_value_from_blueprint(blueprint);
-        println!("{}: {}", bid, best_for_blueprint);
-        total_quality += bid * best_for_blueprint;
+        println!("Best for blueprint {}: {}", bid, best_for_blueprint);
+        let current_quality: u32 = bid * best_for_blueprint;
+        total_quality += current_quality;
+        println!("Quality of blueprint {}: {}", bid, current_quality);
     }
     println!("Total quality: {}", total_quality);
 } 
@@ -68,7 +71,7 @@ fn dfs(state: State, blueprint: &mut Blueprint, previous_states: &mut HashMap<St
     let new_states: Vec<State> = get_potential_states(&state, &blueprint);
     let shareable_blueprint: Rc<RefCell<&mut Blueprint>> = Rc::new(RefCell::new(blueprint));
     let current_best_geodes: u32 = shareable_blueprint.as_ref().borrow().get_best_value_from_blueprint();
-    println!("{:?}", &state);
+
     for next_state in &new_states {
         let potentially_more_geodes: bool = get_max_potential_geodes(next_state) >= current_best_geodes;
         if !previous_states.contains_key(next_state) && potentially_more_geodes {
@@ -115,6 +118,11 @@ fn get_max_potential_geodes(state: &State) -> u32 {
     let current_geode_bots: u32 = state.get_num_robots(&ResourceType::Geode);
     let geodes_at_current_rate: u32 = current_geodes + (current_geode_bots * time_left);
 
-    let max_potential_extra_geodes: u32 = time_left * (time_left - 1) / 2;
-    return geodes_at_current_rate + max_potential_extra_geodes;
+    if time_left == 0 {
+        return geodes_at_current_rate;
+    }
+    else {
+        let max_potential_extra_geodes: u32 = time_left * (time_left - 1) / 2;
+        return geodes_at_current_rate + max_potential_extra_geodes;
+    }
 }
