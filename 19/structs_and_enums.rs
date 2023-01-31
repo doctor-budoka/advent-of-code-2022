@@ -4,8 +4,6 @@ use std::ops::Sub;
 use std::cmp::Ordering;
 use std::cmp::max;
 
-const MAX_TIME: u32 = 24;
-
 #[derive(Eq, Hash, PartialEq, Debug, Copy, Clone)]
 pub enum ResourceType {
     Ore,
@@ -188,11 +186,11 @@ pub struct State {
 }
 
 impl State {
-    pub fn new() -> State {
+    pub fn new(time_left: u32) -> State {
         let mut robot_tally = ResourceTally::new();
         robot_tally.ore = 1;
         return State {
-            time_left: MAX_TIME, 
+            time_left: time_left, 
             resources: ResourceTally::new(), 
             robots: robot_tally,
         }
