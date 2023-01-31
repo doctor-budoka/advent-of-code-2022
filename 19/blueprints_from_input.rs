@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use structs_and_enums::{Blueprint, ResourceType, ResourceTally, State};
+use structs_and_enums::{Blueprint, ResourceType, ResourceTally};
 
 pub fn get_blueprints_from_input(input: String) -> Vec<Blueprint> {
     let mut blueprints: Vec<Blueprint> = Vec::new();
