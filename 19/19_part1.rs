@@ -67,9 +67,11 @@ fn get_best_value_from_blueprint(blueprint: Blueprint) -> u32 {
 fn dfs(state: State, blueprint: &mut Blueprint, previous_states: &mut HashMap<State, Option<State>>) {
     let new_states: Vec<State> = get_potential_states(&state, &blueprint);
     let shareable_blueprint: Rc<RefCell<&mut Blueprint>> = Rc::new(RefCell::new(blueprint));
+    let current_best_geodes: u32 = shareable_blueprint.as_ref().borrow().get_best_value_from_blueprint();
     println!("{:?}", &state);
     for next_state in &new_states {
-        if !previous_states.contains_key(next_state) {
+        let potentially_more_geodes: bool = get_max_potential_geodes(next_state) >= current_best_geodes;
+        if !previous_states.contains_key(next_state) && potentially_more_geodes {
             dfs(*next_state, &mut shareable_blueprint.as_ref().borrow_mut(), previous_states);
             previous_states.insert(*next_state, Some(state));
         }
@@ -107,7 +109,7 @@ fn get_potential_new_robots(resources: &ResourceTally, blueprint: &Blueprint) ->
     return output;
 }
 
-fn max_potential_geodes(state: &State) -> u32 {
+fn get_max_potential_geodes(state: &State) -> u32 {
     let time_left: u32 = state.get_time_left();
     let current_geodes: u32 = state.get_resource_amount(&ResourceType::Geode);
     let current_geode_bots: u32 = state.get_num_robots(&ResourceType::Geode);
