@@ -33,18 +33,28 @@ impl Sign {
 #[derive(Debug)]
 struct CircularVector {
     vector: HashMap<usize, i32>,
+    new_inds: HashMap<usize, usize>,
+    original_inds: HashMap<usize, usize>,
     length: usize,
     anchor: Option<usize>,
 }
 
 impl CircularVector {
     pub fn new() -> CircularVector {
-        return CircularVector {vector: HashMap::new(), length: 0, anchor: None};
+        return CircularVector {
+            vector: HashMap::new(),
+            new_inds: HashMap::new(),
+            original_inds: HashMap::new(),
+            length: 0,
+            anchor: None,
+        };
     }
 
     pub fn insert(&mut self, item: i32) {
         let new_key: usize = self.length;
         self.vector.insert(new_key, item);
+        self.new_inds.insert(new_key, new_key);
+        self.original_inds.insert(new_key, new_key);
         self.length += 1;
         if item == 0 {
             self.anchor = Some(new_key);
@@ -75,6 +85,12 @@ impl CircularVector {
         self.vector.insert(to_key, current_from_value);
         self.vector.insert(from_key, current_to_value);
 
+        let original_from_value_key: usize = *self.original_inds.get(&from_key).unwrap();
+        let original_to_value_key: usize = *self.original_inds.get(&to_key).unwrap();
+        self.original_inds.insert(to_key, original_from_value_key);
+        self.original_inds.insert(from_key, original_to_value_key);
+        self.new_inds.insert(original_from_value_key, to_key);
+        self.new_inds.insert(original_to_value_key, from_key);
 
         if current_to_value == 0 {
             self.anchor = Some(from_key);
@@ -107,6 +123,10 @@ impl CircularVector {
         print!("]\n");
         stdout().flush().expect("This should print to screen");
     }
+
+    pub fn get_new_ind_from_original(&self, original_ind: usize) -> usize {
+        return *self.new_inds.get(&original_ind).unwrap();
+    }
 }
 
 
@@ -126,7 +146,8 @@ fn main() {
 
     new_vector.render_as_vec();
     for (ind, value) in original_vector.iter().enumerate() {
-        new_vector.move_key_num_places(ind as i32, *value);
+        let new_ind: i32 = new_vector.get_new_ind_from_original(ind) as i32;
+        new_vector.move_key_num_places(new_ind, *value);
         new_vector.render_as_vec();
     }
     println!("{:?}", &original_vector);
