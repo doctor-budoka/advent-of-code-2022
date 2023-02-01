@@ -144,14 +144,15 @@ fn main() {
         new_vector.insert(item);
     }
 
-    new_vector.render_as_vec();
+    println!("Total elements to run through: {}", &original_vector.len());
     for (ind, value) in original_vector.iter().enumerate() {
         let new_ind: i32 = new_vector.get_new_ind_from_original(ind) as i32;
         new_vector.move_key_num_places(new_ind, *value);
-        new_vector.render_as_vec();
+        if (ind + 1) % 100 == 0 {
+            println!("{}/{} done", ind + 1, &original_vector.len());
+        }
     }
-    println!("{:?}", &original_vector);
-    println!("{:?}", &new_vector);
+
     if let Some(base_key) = new_vector.anchor {
         let grove_coord1 = new_vector.get(base_key as i32 + 1000);
         let grove_coord2 = new_vector.get(base_key as i32 + 2000);
