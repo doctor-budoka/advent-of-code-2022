@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 pub type StdInt = i32;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Operation {
     Addition,
     Subtraction,
@@ -68,12 +68,13 @@ impl Token {
 #[derive(Debug)]
 pub struct Formula {
     formula: Vec<Token>,
+    values: HashMap<String, StdInt>,
     evaluates_to: Option<StdInt>,
 }
 
 impl Formula {
     pub fn new(formula: Vec<Token>) -> Self {
-        return Self {formula: formula, evaluates_to: None}
+        return Self {formula: formula, values: HashMap::new(), evaluates_to: None};
     }
 
     pub fn from_string(formula_str: &String) -> Self {
@@ -91,6 +92,65 @@ impl Formula {
         }
 
         return Self::new(token_vector);
+    }
+
+    pub fn get_variable_names(&self) -> Vec<String> {
+        let mut output: Vec<String> = Vec::new();
+        for token in &self.formula {
+            match token {
+                Token::Variable(name) => output.push(name.to_string()),
+                _ => (),
+            };
+        }
+        return output;
+    }
+
+    pub fn sub_value(&mut self, variable: &String, value: StdInt) {
+        self.values.insert(variable.to_string(), value);
+    }
+
+    pub fn evaluate(&mut self) -> Option<StdInt> {
+        if let Some(num) = self.evaluates_to {
+            return Some(num);
+        }
+
+        let variable_names = self.get_variable_names();
+        for name in variable_names {
+            if !self.values.contains_key(&name) {
+                return None;
+            }
+        }
+        return Some(self.evaluate_if_variables_known());
+    }
+
+    pub fn evaluate_if_variables_known(&mut self) -> StdInt {
+        if self.formula.len() == 1 {
+            let ans = self.evaluate_term(&self.formula[0]);
+            self.evaluates_to = Some(ans);
+            return ans;
+        }
+        else if self.formula.len() == 3 {
+            let left = self.evaluate_term(&self.formula[0]);
+            let right = self.evaluate_term(&self.formula[2]);
+            let ans = match &self.formula[1] {
+                Token::Op(operation) => operation.evaluate(left, right),
+                other => panic!("Middle token should be a term, not {:?}", other),
+            };
+            self.evaluates_to = Some(ans);
+            return ans;
+        }
+        else {
+            panic!("Formula isn't valid!");
+        }
+
+    }
+
+    pub fn evaluate_term(&self, term: &Token) -> StdInt {
+        return match term {
+            Token::Constant(num) => *num,
+            Token::Variable(name) => *self.values.get(name).unwrap(),
+            Token::Op(op) => panic!("'{:?} isn't a valid term for evaluation'", op),
+        };
     }
 }
 
@@ -116,4 +176,8 @@ impl SymbolTable {
         println!("{:?}", formula);
         self.add_symbol(symbol_name, formula);
     }
+
+    // pub fn evaluate_variable(&mut self, variable_name: &String) -> StdInt {
+
+    // }
 }
