@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-pub type StdInt = i32;
+pub type StdInt = i64;
 
 #[derive(Debug, Copy, Clone)]
 pub enum Operation {
@@ -61,6 +61,14 @@ impl Token {
         }
         else {
             return Token::Variable(string.to_string());
+        }
+    }
+
+    pub fn create_copy(&self) -> Self {
+        return match self {
+            Self::Op(op) => Self::Op(*op),
+            Self::Constant(num) => Self::Constant(*num),
+            Self::Variable(string) => Self::Variable((&string).to_string()),
         }
     }
 }
@@ -152,6 +160,15 @@ impl Formula {
             Token::Op(op) => panic!("'{:?} isn't a valid term for evaluation'", op),
         };
     }
+
+    pub fn create_copy(&self) -> Self {
+        let values_copy: HashMap<String, StdInt> = self.values.iter().map(|(x, y)| ((&x).to_string(), *y)).collect();
+        return Self {
+            formula: self.formula.iter().map(|x| x.create_copy()).collect(),
+            values: HashMap::from(values_copy),
+            evaluates_to: self.evaluates_to,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -173,11 +190,26 @@ impl SymbolTable {
         let symbol_name: &String = &vec_str[0];
         let formula_str: &String = &vec_str[1];
         let formula: Formula = Formula::from_string(&formula_str);
-        println!("{:?}", formula);
         self.add_symbol(symbol_name, formula);
     }
 
-    // pub fn evaluate_variable(&mut self, variable_name: &String) -> StdInt {
-
-    // }
+    pub fn evaluate_variable(&mut self, variable_name: &String) -> Option<StdInt> {
+        let mut variable_formula: Formula = self.table.get(variable_name).unwrap().create_copy();
+        match variable_formula.evaluate() {
+            None => {
+                let variables_to_evaluate: Vec<String> = variable_formula.get_variable_names();
+                for name in &variables_to_evaluate {
+                    let ans = self.evaluate_variable(name);
+                    if let Some(num) = ans {
+                        variable_formula.sub_value(name, num);
+                    }
+                    else {
+                        return None;
+                    }
+                }
+                return variable_formula.evaluate();
+            },
+            Some(num) => return Some(num),
+        };
+    }
 }
