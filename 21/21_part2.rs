@@ -2,9 +2,9 @@ use std::env;
 use std::fs;
 
 mod token;
-use::token::{StdInt,Operation,Token};
+use token::Operation;
+mod linear_vector;
 mod formula;
-use::formula::Formula;
 mod symbol_table;
 use symbol_table::SymbolTable;
 

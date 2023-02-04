@@ -2,6 +2,7 @@ use std::env;
 use std::fs;
 
 mod token;
+mod linear_vector;
 mod formula;
 mod symbol_table;
 use symbol_table::SymbolTable;

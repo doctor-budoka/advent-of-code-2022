@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use token::{StdInt,Operation,Token};
+use linear_vector::LinearVector;
 
 #[derive(Debug)]
 pub struct Formula {
