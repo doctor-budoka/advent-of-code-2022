@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-use token::{StdInt,Operation,Token};
+use rational::Rational;
+use token::{Operation,Token};
 use formula::Formula;
 
 #[derive(Debug)]
@@ -35,7 +36,7 @@ impl SymbolTable {
         }
     }
 
-    pub fn evaluate_variable(&mut self, variable_name: &String) -> Option<StdInt> {
+    pub fn evaluate_variable(&mut self, variable_name: &String) -> Option<Rational> {
         let mut variable_formula: Formula = self.table.get(variable_name).unwrap().create_copy();
         match variable_formula.evaluate() {
             None => {
@@ -55,7 +56,7 @@ impl SymbolTable {
         };
     }
     
-    // pub fn solve_for_symbol(&mut self, symbol: &String) -> StdInt {
+    // pub fn solve_for_symbol(&mut self, symbol: &String) -> Rational {
     //     let constraint = self.constraint.as_ref().unwrap().create_copy();
     //     let left = self.reduce_variable(constraint.formula[0].create_copy());
     //     let right = self.reduce_variable(constraint.formula[2].create_copy());

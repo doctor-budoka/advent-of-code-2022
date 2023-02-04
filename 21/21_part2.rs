@@ -1,6 +1,7 @@
 use std::env;
 use std::fs;
 
+mod rational;
 mod token;
 use token::Operation;
 mod linear_vector;

@@ -1,4 +1,4 @@
-pub type StdInt = i64;
+use rational::{StdInt,Rational};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Operation {
@@ -10,13 +10,13 @@ pub enum Operation {
 }
 
 impl Operation {
-    pub fn evaluate(&self, left: StdInt, right: StdInt) -> StdInt {
+    pub fn evaluate(&self, left: Rational, right: Rational) -> Rational {
         return match self {
             Self::Addition => left + right,
             Self::Subtraction => left - right,
             Self::Multiplication => left * right,
             Self::Division => left / right,
-            Self::Equals => (left == right) as StdInt,
+            Self::Equals => Rational::from_int((left == right) as StdInt),
         }
     }
 
@@ -47,16 +47,16 @@ impl Operation {
 
 #[derive(Debug,PartialEq)]
 pub enum Token {
-    Term(StdInt, String),
+    Term(Rational, String),
     Variable(String),
-    Constant(StdInt),
+    Constant(Rational),
     Op(Operation),
 }
 
 impl Token {
     pub fn from_string(string: &String) -> Token {
         if let Ok(int) = string.parse::<StdInt>() {
-            return Token::Constant(int);
+            return Token::Constant(Rational::from_int(int));
         }
         else if let Ok(op) = Operation::from_string(string) {
             return Token::Op(op);

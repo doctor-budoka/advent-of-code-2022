@@ -1,21 +1,26 @@
 use std::ops::{Add,Sub,Mul,Div};
-use std::collections::HashMap;
 
-use token::{StdInt,Operation,Token};
+use rational::{StdInt,Rational,R0, R1};
+use token::{Operation,Token};
 use formula::Formula;
+
 
 // This method assumes we have only one unknown (which is the case for now)
 // This method assumes we won't end up with higher order terms for that one variable)
 #[derive(Debug)]
 pub struct LinearVector {
     name: String,
-    constant: StdInt,
-    coeff: StdInt,
+    constant: Rational,
+    coeff: Rational,
 }
 
 impl LinearVector {
-    pub fn new(constant: StdInt, coeff: StdInt, name: &String) -> Self {
+    pub fn new(constant: Rational, coeff: Rational, name: &String) -> Self {
         return Self {constant: constant, coeff: coeff, name: name.to_string()};
+    }
+
+    pub fn from_ints(constant: StdInt, coeff: StdInt, name: &String) -> Self {
+        return Self::new(Rational::from_int(constant), Rational::from_int(coeff), name);
     }
 
     pub fn create_copy(&self) -> Self {
@@ -23,13 +28,13 @@ impl LinearVector {
     }
 
     pub fn to_formula(&self) -> Formula {
-        if (self.coeff == 0) && (self.constant == 0) {
-            return Formula::new(vec![Token::Constant(0)]);
+        if (self.coeff == R0) && (self.constant == R0) {
+            return Formula::new(vec![Token::Constant(R0)]);
         }
-        else if self.coeff == 0 {
+        else if self.coeff == R0 {
             return Formula::new(vec![Token::Constant(self.constant)]);
         }
-        else if self.constant == 0 {
+        else if self.constant == R0 {
             return Formula::new(vec![Token::Term(self.coeff, (&self.name).to_string())]);
         }
         else {
@@ -74,9 +79,9 @@ impl LinearVector {
         else if (var_names.len() == 1) && (var_names[0] != name.to_string()) {panic!("Variable name introduced is different from what was specified: {}, {}", name, var_names[0]);}
         if formula.get_formula().len() != 1 {panic!{"This method only handles 1 term formulae!"};}
         return match formula.get_formula()[0] {
-            Token::Constant(num) => Ok(Self::new(num, 0, name)),
-            Token::Term(num, _) => Ok(Self::new(0, num, name)),
-            Token::Variable(_) => Ok(Self::new(0, 1, name)),
+            Token::Constant(num) => Ok(Self::new(num, R0, name)),
+            Token::Term(num, _) => Ok(Self::new(R0, num, name)),
+            Token::Variable(_) => Ok(Self::new(R0, R1, name)),
             Token::Op(_) => panic!("Can't create a reduced formula from an operation"),
         };
     }
@@ -102,7 +107,7 @@ impl Mul for LinearVector {
     type Output = Self;
     fn mul(self, other: Self) -> Self {
         if self.name != other.name {panic!{"Multiple variables not supported!"};}
-        if (self.coeff != 0) && (other.coeff != 0) {panic!("LinearVector only supports linear terms!");}
+        if (self.coeff != R0) && (other.coeff != R0) {panic!("LinearVector only supports linear terms!");}
         return Self::new(self.constant * other.constant, self.coeff*other.constant + other.coeff*self.constant, &self.name)
     }
 }
@@ -111,8 +116,8 @@ impl Div for LinearVector {
     type Output = Self;
     fn div(self, other: Self) -> Self {
         if self.name != other.name {panic!{"Multiple variables not supported!"};}
-        if (self.coeff != 0) && (other.coeff != 0) {panic!("LinearVector only supports linear terms!");}
-        if other.coeff == 0 {
+        if (self.coeff != R0) && (other.coeff != R0) {panic!("LinearVector only supports linear terms!");}
+        if other.coeff == R0 {
             return Self {
                 constant: self.constant / other.constant, 
                 coeff: self.coeff / other.constant, 
