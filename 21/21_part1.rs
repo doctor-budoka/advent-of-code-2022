@@ -1,8 +1,10 @@
 use std::env;
 use std::fs;
 
-mod algebra;
-use algebra::SymbolTable;
+mod token;
+mod formula;
+mod symbol_table;
+use symbol_table::SymbolTable;
 
 
 fn main() {
