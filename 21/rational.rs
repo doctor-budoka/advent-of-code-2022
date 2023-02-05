@@ -47,6 +47,10 @@ impl Rational {
     pub fn from_int(num: StdInt) -> Self {
         return Self::new(num, 1);
     }
+
+    pub fn from_bool(value: bool) -> Self {
+        return Self::from_int(value as StdInt);
+    }
 }
 
 impl Add for Rational { 

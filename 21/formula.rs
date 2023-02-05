@@ -1,19 +1,20 @@
 use std::collections::HashMap;
 
-use rational::{Rational,R1};
+use rational::{Rational,R0,R1};
 use token::{Token};
-use linear_vector::LinearVector;
+use linear_vector::{LinearVector,NO_VAR};
 
 #[derive(Debug)]
 pub struct Formula {
     formula: Vec<Token>,
-    substitutions: HashMap<String, Rational>,
+    substitutions: HashMap<String, LinearVector>,
+    reduces_to: Option<LinearVector>,
     evaluates_to: Option<Rational>,
 }
 
 impl Formula {
     pub fn new(formula: Vec<Token>) -> Self {
-        return Self {formula: formula, substitutions: HashMap::new(), evaluates_to: None};
+        return Self{formula: formula, substitutions: HashMap::new(), reduces_to: None, evaluates_to: None};
     }
 
     pub fn from_string(formula_str: &String) -> Self {
@@ -53,60 +54,85 @@ impl Formula {
         return output;
     }
 
-    pub fn sub_value(&mut self, variable: &String, value: Rational) {
+    pub fn sub_linear_vec(&mut self, variable: &String, value: LinearVector) {
         self.substitutions.insert(variable.to_string(), value);
     }
 
-    pub fn evaluate(&mut self) -> Option<Rational> {
+    pub fn sub_value(&mut self, variable: &String, value: Rational) {
+        self.substitutions.insert(variable.to_string(), LinearVector::constant_from_rational(value, &NO_VAR));
+    }
+
+    fn set_reduces_to(&mut self, value: LinearVector){
+        self.reduces_to = Some(value);
+        if value.get_coeff() == R0 {self.evaluates_to = Some(value.get_constant());}
+    }
+
+    fn set_evaluates_to(&mut self, value: Rational){
+        self.evaluates_to = Some(value);
+    }
+
+    pub fn reduce_to_linear_vector(&mut self, subject: &String) -> Result<LinearVector, &str> {
         if let Some(num) = self.evaluates_to {
-            return Some(num);
+            let lin_vec: LinearVector = LinearVector::constant_from_rational(num, &subject);
+            self.set_reduces_to(lin_vec);
+            return Ok(lin_vec);
+        }
+        else if let Some(lin_vec) = self.reduces_to {
+            return Ok(lin_vec);
         }
 
         let variable_names = self.get_variable_names();
         for name in variable_names {
-            if !self.substitutions.contains_key(&name) {
-                return None;
+            if (name != subject.to_string()) && !self.substitutions.contains_key(&name) {
+                return Err("Formula contains unknown variable");
             }
         }
-        return Some(self.evaluate_if_variables_known());
-    }
-
-    pub fn evaluate_if_variables_known(&mut self) -> Rational {
         if self.formula.len() == 1 {
-            let ans = self.evaluate_term(&self.formula[0]);
-            self.evaluates_to = Some(ans);
-            return ans;
+            let ans = self.reduce_token(&self.formula[0], &subject).unwrap();
+            self.set_reduces_to(ans);
+            return Ok(ans);
         }
         else if self.formula.len() == 3 {
-            let left = self.evaluate_term(&self.formula[0]);
-            let right = self.evaluate_term(&self.formula[2]);
+            let left = self.reduce_token(&self.formula[0], &subject).unwrap();
+            let right = self.reduce_token(&self.formula[2], &subject).unwrap();
             let ans = match &self.formula[1] {
                 Token::Op(operation) => operation.evaluate(left, right),
                 other => panic!("Middle token should be a term, not {:?}", other),
             };
-            self.evaluates_to = Some(ans);
-            return ans;
+            self.set_reduces_to(ans);
+            return Ok(ans);
         }
         else {
             panic!("Formula isn't valid!");
         }
-
     }
 
-    pub fn evaluate_term(&self, term: &Token) -> Rational {
+    pub fn reduce_token(&self, term: &Token, subject: &String) -> Result<LinearVector,&str> {
         return match term {
-            Token::Constant(num) => *num,
-            Token::Variable(name) => *self.substitutions.get(name).unwrap(),
-            Token::Op(op) => panic!("'{:?} isn't a valid term for evaluation'", op),
-            Token::Term(num, name) => (*num) * (*self.substitutions.get(name).unwrap()),
+            Token::Constant(num) => Ok(LinearVector::constant_from_rational(*num, subject)),
+            Token::Variable(name) => Ok(*self.substitutions.get(name).unwrap()),
+            Token::Op(op) => Err("Operations aren't valid terms for evaluation on their own isn't a valid term for evaluation"),
+            Token::Term(num, name) => Ok(LinearVector::constant_from_rational(*num, subject) * (*self.substitutions.get(name).unwrap())),
         };
     }
 
+    pub fn evaluate(&mut self) -> Result<Rational, &str> {
+        if let Some(num) = self.evaluates_to {
+            return Ok(num);
+        }
+        else if let Ok(ans) = self.reduce_to_linear_vector(&NO_VAR) {
+            return Ok(ans.get_constant());
+        }
+        else {return Err("Formula isn't currently reducible to a rational")}
+    }
+
+
     pub fn create_copy(&self) -> Self {
-        let values_copy: HashMap<String, Rational> = self.substitutions.iter().map(|(x, y)| ((&x).to_string(), *y)).collect();
+        let values_copy: HashMap<String, LinearVector> = self.substitutions.iter().map(|(x, y)| ((&x).to_string(), *y)).collect();
         return Self {
             formula: self.formula.iter().map(|x| x.create_copy()).collect(),
             substitutions: HashMap::from(values_copy),
+            reduces_to: self.reduces_to,
             evaluates_to: self.evaluates_to,
         }
     }

@@ -4,6 +4,7 @@ use rational::{StdInt,Rational,R0, R1};
 use token::{Operation,Token};
 use formula::Formula;
 
+pub const NO_VAR: String = "".to_string();
 
 // This method assumes we have only one unknown (which is the case for now)
 // This method assumes we won't end up with higher order terms for that one variable)
@@ -19,8 +20,36 @@ impl LinearVector {
         return Self {constant: constant, coeff: coeff, name: name.to_string()};
     }
 
+    pub fn from_rationals(constant: Rational, coeff: Rational, name: &String) -> Self {
+        return Self::new(constant, coeff, name);
+    }
+
     pub fn from_ints(constant: StdInt, coeff: StdInt, name: &String) -> Self {
-        return Self::new(Rational::from_int(constant), Rational::from_int(coeff), name);
+        return Self::from_rationals(Rational::from_int(constant), Rational::from_int(coeff), name);
+    }
+
+    pub fn from_bool(value: bool, name: &String) -> Self {
+        return Self::constant_from_int(value as StdInt, name);
+    }
+
+    pub fn get_coeff(&self) -> Rational {
+        return self.coeff;
+    }
+
+    pub fn get_constant(&self) -> Rational {
+        return self.constant;
+    }
+
+    pub fn get_variable_name(&self) -> String {
+        return self.name;
+    }
+
+    pub fn constant_from_rational(constant: Rational, name: &String) -> Self {
+        return Self::from_rationals(constant, R0, name);
+    }
+
+    pub fn constant_from_int(constant: StdInt, name: &String) -> Self {
+        return Self::constant_from_rational(Rational::from_int(constant), name);
     }
 
     pub fn create_copy(&self) -> Self {
@@ -129,3 +158,10 @@ impl Div for LinearVector {
         }
     }
 }
+
+impl PartialEq for LinearVector {
+    fn eq(&self, other: &Self) -> bool {
+        return (self.name == other.name) && (self.coeff == other.coeff) && (self.constant == other.constant);
+    }
+}
+impl Eq for LinearVector {}

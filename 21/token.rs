@@ -1,3 +1,4 @@
+use std::ops::{Add,Sub,Mul,Div};
 use rational::{StdInt,Rational};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -10,13 +11,14 @@ pub enum Operation {
 }
 
 impl Operation {
-    pub fn evaluate(&self, left: Rational, right: Rational) -> Rational {
+    pub fn evaluate<T: Add<Output=T> + Sub<Output=T> + Mul<Output=T> + Div<Output=T> + PartialEq>(&self, left: T, right: T) -> T {
         return match self {
             Self::Addition => left + right,
             Self::Subtraction => left - right,
             Self::Multiplication => left * right,
             Self::Division => left / right,
-            Self::Equals => Rational::from_int((left == right) as StdInt),
+            // Self::Equals => T::from_bool(left == right),
+            _ => panic!("This operation is not implemented")
         }
     }
 
