@@ -37,26 +37,6 @@ impl SymbolTable {
         }
     }
 
-    // pub fn evaluate_variable(&mut self, variable_name: &String) -> Result<Rational, &str> {
-    //     let mut variable_formula: Formula = self.table.get(variable_name).unwrap().create_copy();
-    //     match variable_formula.evaluate() {
-    //         Err(_) => {
-    //             let variables_to_evaluate: Vec<String> = variable_formula.get_variable_names();
-    //             for name in &variables_to_evaluate {
-    //                 let ans = self.evaluate_variable(name);
-    //                 if let Ok(num) = ans {
-    //                     variable_formula.sub_value(name, num);
-    //                 }
-    //                 else {
-    //                     return Err("Formula can't currently be evaluated as a rational.");
-    //                 }
-    //             }
-    //             return variable_formula.evaluate();
-    //         },
-    //         Ok(num) => return Ok(num),
-    //     };
-    // }
-
     pub fn evaluate_variable(&mut self, variable_name: &String) -> Result<Rational, &str> {
         let reduced: Result<LinearVector, &str> = self.reduce_variable(variable_name, &(NO_VAR.to_string()));
         return match reduced {
@@ -66,47 +46,49 @@ impl SymbolTable {
     }
 
     pub fn reduce_variable(&mut self, variable_name: &String, subject: &String) -> Result<LinearVector, &str> {
-        let mut variable_formula: Formula = self.table.get(variable_name).unwrap().create_copy();
-        match variable_formula.reduce_to_linear_vector(subject) {
-            Err(_) => {
-                let variables_to_evaluate: Vec<String> = variable_formula.get_variable_names();
-                for name in &variables_to_evaluate {
-                    if name == subject {continue;}
-                    let ans = self.reduce_variable(name, subject);
-                    if let Ok(num) = ans {
-                        variable_formula.sub_linear_vec(name, num);
-                    }
-                    else {
-                        return Err("Formula currently not reducible in terms of the given subject");
-                    }
-                }
-                match variable_formula.reduce_to_linear_vector(subject) {
-                    Ok(_) => (),
-                    Err(_) => return Err("Variale not currently reducible in terms of the given subject"),
-                };
-                return Ok(variable_formula.get_reduces_to().unwrap());
+        println!("Reducing {}...", &variable_name);
+        let mut current_formula = self.table.get(variable_name).unwrap().create_copy();
+        let variables_to_evaluate: &Vec<String> = &(self.table.get(variable_name).unwrap().get_variable_names());
+        for name in variables_to_evaluate {
+            if name == subject {continue;}
+            let ans = self.reduce_variable(name, subject);
+            if let Ok(num) = ans {
+                current_formula.sub_linear_vec(name, num);
+            }
+            else {
+                return Err("Formula currently not reducible in terms of the given subject");
+            }
+        }
+        match current_formula.reduce_to_linear_vector(subject) {
+            Ok(ans) => {
+                println!("{} reduces to {:?} after recursion", &variable_name, &ans);
+                self.add_symbol(variable_name, current_formula);
+                return Ok(ans);
             },
-            Ok(lin_vec) => return Ok(lin_vec),
+            Err(_) => return Err("Variable not currently reducible in terms of the given subject"),
         };
     }
+
     
     pub fn solve_for_symbol(&mut self, subject: &String) -> Result<Rational, &str> {
-        let constraint = self.constraint.as_ref().unwrap().create_copy();
+        let left_symbol = self.constraint.as_ref().expect("No constraint found").get_formula()[0].create_copy();
+        let right_symbol = self.constraint.as_ref().expect("No constraint found").get_formula()[2].create_copy();
         let left: LinearVector;
         let right: LinearVector;
-        if let Token::Variable(left_name) = constraint.get_formula()[0].create_copy() {
+        
+        if let Token::Variable(left_name) = left_symbol {
             self.reduce_variable(&left_name, subject);
             left = self.table.get(&left_name).unwrap().get_reduces_to().unwrap();
+            println!("Solve Left: {:?}", left);
         }else {return Err("Malformed formula");}
-        if let Token::Variable(right_name) = constraint.get_formula()[2].create_copy() {
+
+        if let Token::Variable(right_name) = right_symbol {
             self.reduce_variable(&right_name, subject);
             right = self.table.get(&right_name).unwrap().get_reduces_to().unwrap();
+            println!("Solved Right: {:?}", right);
         }else {return Err("Malformed formula");}
+    
         let equals_zero = left - right;
         return Ok(-equals_zero.get_constant()/equals_zero.get_coeff());
     }
-
-    // pub fn reduce_variable(&mut self, var_name, subject: Token) -> Formula {
-    //     return Formula::new(vec![Token::Constant(0)]);
-    // }
 }

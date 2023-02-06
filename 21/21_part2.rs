@@ -29,11 +29,10 @@ fn main() {
             symbol_table.add_symbol_from_string(&line.trim().to_string());
         }
     }
-    // println!("{:?}", &symbol_table);
     println!("Data loaded. Evaluating humn...");
 
-    // let ans = symbol_table.solve_for_symbol(&String::from("humn"));
-    // println!("humn answer: {}", ans);
+    let ans = symbol_table.solve_for_symbol(&String::from("humn")).unwrap();
+    println!("humn answer: {}", ans);
 } 
 
 
