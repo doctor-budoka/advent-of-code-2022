@@ -4,7 +4,7 @@ use rational::{StdInt,Rational,R0, R1};
 use token::{Operation,Token};
 use formula::Formula;
 
-pub const NO_VAR: String = "".to_string();
+pub const NO_VAR: &str = "";
 
 // This method assumes we have only one unknown (which is the case for now)
 // This method assumes we won't end up with higher order terms for that one variable)
@@ -41,7 +41,7 @@ impl LinearVector {
     }
 
     pub fn get_variable_name(&self) -> String {
-        return self.name;
+        return (&self.name).to_string();
     }
 
     pub fn constant_from_rational(constant: Rational, name: &String) -> Self {
@@ -165,3 +165,9 @@ impl PartialEq for LinearVector {
     }
 }
 impl Eq for LinearVector {}
+
+impl Clone for LinearVector {
+    fn clone(&self) -> Self {
+        return Self::new(self.constant, self.coeff, &self.name);
+    }
+}

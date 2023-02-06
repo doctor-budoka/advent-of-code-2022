@@ -59,26 +59,30 @@ impl Formula {
     }
 
     pub fn sub_value(&mut self, variable: &String, value: Rational) {
-        self.substitutions.insert(variable.to_string(), LinearVector::constant_from_rational(value, &NO_VAR));
+        self.substitutions.insert(variable.to_string(), LinearVector::constant_from_rational(value, &(NO_VAR.to_string())));
     }
 
-    fn set_reduces_to(&mut self, value: LinearVector){
-        self.reduces_to = Some(value);
-        if value.get_coeff() == R0 {self.evaluates_to = Some(value.get_constant());}
+    fn set_reduces_to(&mut self, value: &LinearVector){
+        self.reduces_to = Some(value.clone());
+        if (&value).get_coeff() == R0 {self.evaluates_to = Some(value.get_constant());}
     }
 
-    fn set_evaluates_to(&mut self, value: Rational){
-        self.evaluates_to = Some(value);
+    fn set_evaluates_to(&mut self, value: &Rational){
+        self.evaluates_to = Some(*value);
+    }
+
+    pub fn get_reduces_to(&self) -> Option<LinearVector> {
+        return self.reduces_to.as_ref().cloned();
     }
 
     pub fn reduce_to_linear_vector(&mut self, subject: &String) -> Result<LinearVector, &str> {
         if let Some(num) = self.evaluates_to {
             let lin_vec: LinearVector = LinearVector::constant_from_rational(num, &subject);
-            self.set_reduces_to(lin_vec);
+            self.set_reduces_to(&lin_vec);
             return Ok(lin_vec);
         }
-        else if let Some(lin_vec) = self.reduces_to {
-            return Ok(lin_vec);
+        else if let Some(lin_vec) = &self.reduces_to {
+            return Ok(lin_vec.clone());
         }
 
         let variable_names = self.get_variable_names();
@@ -89,7 +93,7 @@ impl Formula {
         }
         if self.formula.len() == 1 {
             let ans = self.reduce_token(&self.formula[0], &subject).unwrap();
-            self.set_reduces_to(ans);
+            self.set_reduces_to(&ans);
             return Ok(ans);
         }
         else if self.formula.len() == 3 {
@@ -99,7 +103,7 @@ impl Formula {
                 Token::Op(operation) => operation.evaluate(left, right),
                 other => panic!("Middle token should be a term, not {:?}", other),
             };
-            self.set_reduces_to(ans);
+            self.set_reduces_to(&ans);
             return Ok(ans);
         }
         else {
@@ -110,9 +114,9 @@ impl Formula {
     pub fn reduce_token(&self, term: &Token, subject: &String) -> Result<LinearVector,&str> {
         return match term {
             Token::Constant(num) => Ok(LinearVector::constant_from_rational(*num, subject)),
-            Token::Variable(name) => Ok(*self.substitutions.get(name).unwrap()),
-            Token::Op(op) => Err("Operations aren't valid terms for evaluation on their own isn't a valid term for evaluation"),
-            Token::Term(num, name) => Ok(LinearVector::constant_from_rational(*num, subject) * (*self.substitutions.get(name).unwrap())),
+            Token::Variable(name) => Ok(self.substitutions.get(name).unwrap().clone()),
+            Token::Op(_) => Err("Operations aren't valid terms for evaluation on their own isn't a valid term for evaluation"),
+            Token::Term(num, name) => Ok(LinearVector::constant_from_rational(*num, subject) * (self.substitutions.get(name).unwrap().clone())),
         };
     }
 
@@ -120,7 +124,7 @@ impl Formula {
         if let Some(num) = self.evaluates_to {
             return Ok(num);
         }
-        else if let Ok(ans) = self.reduce_to_linear_vector(&NO_VAR) {
+        else if let Ok(ans) = self.reduce_to_linear_vector(&(NO_VAR.to_string())) {
             return Ok(ans.get_constant());
         }
         else {return Err("Formula isn't currently reducible to a rational")}
@@ -128,11 +132,14 @@ impl Formula {
 
 
     pub fn create_copy(&self) -> Self {
-        let values_copy: HashMap<String, LinearVector> = self.substitutions.iter().map(|(x, y)| ((&x).to_string(), *y)).collect();
+        let values_copy: HashMap<String, LinearVector> = self.substitutions.iter().map(|(x, y)| ((&x).to_string(), y.clone())).collect();
         return Self {
             formula: self.formula.iter().map(|x| x.create_copy()).collect(),
             substitutions: HashMap::from(values_copy),
-            reduces_to: self.reduces_to,
+            reduces_to: match &self.reduces_to {
+                Some(lin_vec) => Some(lin_vec.clone()),
+                None => None, 
+            },
             evaluates_to: self.evaluates_to,
         }
     }

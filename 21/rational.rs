@@ -1,4 +1,4 @@
-use std::ops::{Add,Sub,Mul,Div};
+use std::ops::{Add,Sub,Mul,Div,Neg};
 use std::cmp::Ordering;
 use std::fmt;
 
@@ -82,6 +82,13 @@ impl Div for Rational {
     type Output = Self;
     fn div(self, other: Self) -> Self {
         return Self::new(self.num * other.denom, self.denom * other.num);
+    }
+}
+
+impl Neg for Rational {
+    type Output = Self;
+    fn neg(self) -> Self {
+        return Self::new(-self.num, self.denom);
     }
 }
 
