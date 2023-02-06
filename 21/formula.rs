@@ -63,7 +63,6 @@ impl Formula {
     }
 
     fn set_reduces_to(&mut self, value: &LinearVector){
-        println!("Setting {:?} to {:?}", self.formula, value);
         self.reduces_to = Some(value.clone());
         if (&value).get_coeff() == R0 {self.evaluates_to = Some(value.get_constant());}
     }
@@ -100,12 +99,10 @@ impl Formula {
         else if self.formula.len() == 3 {
             let left = self.reduce_token(&self.formula[0], &subject).unwrap();
             let right = self.reduce_token(&self.formula[2], &subject).unwrap();
-            println!("Left: {:?}, Right: {:?}", &left, &right);
             let ans = match &self.formula[1] {
                 Token::Op(operation) => operation.evaluate(left, right),
                 other => panic!("Middle token should be a term, not {:?}", other),
             };
-            println!("Ans: {:?}", &ans);
             self.set_reduces_to(&ans);
             return Ok(ans);
         }
@@ -115,14 +112,12 @@ impl Formula {
     }
 
     pub fn reduce_token(&self, term: &Token, subject: &String) -> Result<LinearVector,&str> {
-        println!("Reducing token {:?}...", term);
         let reduced = match term {
             Token::Constant(num) => Ok(LinearVector::constant_from_rational(*num, subject)),
             Token::Variable(name) => if name == subject {Ok(LinearVector::from_rationals(R0, R1, &name))} else {Ok(self.substitutions.get(name).unwrap().clone())},
             Token::Op(_) => Err("Operations aren't valid terms for evaluation on their own isn't a valid term for evaluation"),
             Token::Term(num, name) => Ok(LinearVector::constant_from_rational(*num, subject) * (self.substitutions.get(name).unwrap().clone())),
         };
-        println!("Reduces to {:?}", &reduced);
         return reduced;
     }
 

@@ -46,7 +46,6 @@ impl SymbolTable {
     }
 
     pub fn reduce_variable(&mut self, variable_name: &String, subject: &String) -> Result<LinearVector, &str> {
-        println!("Reducing {}...", &variable_name);
         let mut current_formula = self.table.get(variable_name).unwrap().create_copy();
         let variables_to_evaluate: &Vec<String> = &(self.table.get(variable_name).unwrap().get_variable_names());
         for name in variables_to_evaluate {
@@ -61,7 +60,6 @@ impl SymbolTable {
         }
         match current_formula.reduce_to_linear_vector(subject) {
             Ok(ans) => {
-                println!("{} reduces to {:?} after recursion", &variable_name, &ans);
                 self.add_symbol(variable_name, current_formula);
                 return Ok(ans);
             },
@@ -75,17 +73,15 @@ impl SymbolTable {
         let right_symbol = self.constraint.as_ref().expect("No constraint found").get_formula()[2].create_copy();
         let left: LinearVector;
         let right: LinearVector;
-        
+
         if let Token::Variable(left_name) = left_symbol {
             self.reduce_variable(&left_name, subject);
             left = self.table.get(&left_name).unwrap().get_reduces_to().unwrap();
-            println!("Solve Left: {:?}", left);
         }else {return Err("Malformed formula");}
 
         if let Token::Variable(right_name) = right_symbol {
             self.reduce_variable(&right_name, subject);
             right = self.table.get(&right_name).unwrap().get_reduces_to().unwrap();
-            println!("Solved Right: {:?}", right);
         }else {return Err("Malformed formula");}
     
         let equals_zero = left - right;

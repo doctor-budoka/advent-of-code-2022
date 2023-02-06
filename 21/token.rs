@@ -12,7 +12,6 @@ pub enum Operation {
 
 impl Operation {
     pub fn evaluate<T: Add<Output=T> + Sub<Output=T> + Mul<Output=T> + Div<Output=T> + PartialEq>(&self, left: T, right: T) -> T {
-        println!("Evaluating...");
         return match self {
             Self::Addition => left + right,
             Self::Subtraction => left - right,

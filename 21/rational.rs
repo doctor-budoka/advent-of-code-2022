@@ -5,17 +5,19 @@ use std::fmt;
 pub type StdInt = i64;
 
 pub fn gcd(x: StdInt, y: StdInt) -> StdInt {
+    let x_abs = x.abs();
+    let y_abs = y.abs();
     if x == 0 {
-        return y;
+        return y_abs;
     } 
     else if y == 0 {
-        return x;
+        return x_abs;
     }
     if x == y {
-        return x;
+        return x_abs;
     }
-    let bigger: StdInt = if x > y {x} else {y};
-    let smaller: StdInt = if x > y {y} else {x};
+    let bigger: StdInt = if x_abs > y_abs {x_abs} else {y_abs};
+    let smaller: StdInt = if x_abs > y_abs {y_abs} else {x_abs};
 
     let remainder: StdInt = bigger % smaller;
     return gcd(smaller, remainder);

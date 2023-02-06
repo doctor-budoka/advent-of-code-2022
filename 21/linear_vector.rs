@@ -120,7 +120,6 @@ impl Add for LinearVector {
     type Output = Self;
     fn add(self, other: Self) -> Self {
         if self.name != other.name {panic!{"Multiple variables not supported!"};}
-        println!("Adding vectors");
         return Self::new(self.constant + other.constant, self.coeff + other.coeff, &self.name)
     }
 }
@@ -129,7 +128,6 @@ impl Sub for LinearVector {
     type Output = Self;
     fn sub(self, other: Self) -> Self {
         if self.name != other.name {panic!{"Multiple variables not supported!"};}
-        println!("Subtracting vectors");
         return Self::new(self.constant - other.constant, self.coeff - other.coeff, &self.name)
     }
 }
@@ -139,7 +137,6 @@ impl Mul for LinearVector {
     fn mul(self, other: Self) -> Self {
         if self.name != other.name {panic!{"Multiple variables not supported!"};}
         if (self.coeff != R0) && (other.coeff != R0) {panic!("LinearVector only supports linear terms!");}
-        println!("Multiplying vectors");
         return Self::new(self.constant * other.constant, self.coeff*other.constant + other.coeff*self.constant, &self.name)
     }
 }
@@ -147,7 +144,6 @@ impl Mul for LinearVector {
 impl Div for LinearVector { 
     type Output = Self;
     fn div(self, other: Self) -> Self {
-        println!("Dividing vectors");
         if self.name != other.name {panic!{"Multiple variables not supported!"};}
         if (self.coeff != R0) && (other.coeff != R0) {panic!("LinearVector only supports linear terms!");}
         if other.coeff == R0 {
