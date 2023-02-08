@@ -20,10 +20,11 @@ fn main() {
 
     for instruction in instructions {
         match instruction.parse::<StdInt>() {
-            Ok(_) => (),
+            Ok(distance) => current_point = map.get_new_position(&current_point, &current_direction, distance),
             Err(_) => current_direction = current_direction.rotate(Rotation::from_string(&instruction)),
         }
-        println!("Instruction: {}, new state: {}, {:?}", &instruction, current_point, current_direction);
+        println!("Instruction: {}, new state: {}, {:?}", &instruction, &current_point, &current_direction);
+        map.render_map_with_current_position(&current_point, &current_direction);
     }
     println!("Final position: {}, Final direction: {:?}", &current_point, &current_direction);
     let password: StdInt = (1000 * current_point.y) + (4 * current_point.x) + current_direction.as_int();
@@ -46,11 +47,11 @@ fn get_input_data(input: String) -> (Map, Vec<String>, Point, Direction) {
             for (j, tile_char) in line.chars().enumerate() {
                 let this_tile = Tile::from_char(tile_char);
                 if this_tile != Tile::None {
-                    let this_point = Point::new(i as StdInt + 1, j as StdInt + 1);
+                    let this_point = Point::new(j as StdInt + 1, i as StdInt + 1);
                     map.add_point(this_point, this_tile);
                 }
                 if (this_tile == Tile::Clear) && (initial_point == None) {
-                    initial_point = Some(Point::new(i as StdInt + 1, j as StdInt + 1));
+                    initial_point = Some(Point::new(j as StdInt + 1, i as StdInt + 1));
                 }
             }
         }

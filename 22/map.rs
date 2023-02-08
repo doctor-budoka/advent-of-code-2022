@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::io::stdout;
 use std::io::Write;
 
-use space::{Point,StdInt};
+use space::{Direction,Point,StdInt};
 
 #[derive(PartialEq,Copy,Clone)]
 pub enum Tile {
@@ -51,14 +51,54 @@ impl Map {
         }
     }
 
+    pub fn get_new_position(&self, position: &Point, direction: &Direction, distance: StdInt) -> Point {
+        let mut current_point = *position;
+        for i in 0..distance {
+            current_point = self.attempt_move(&current_point, direction);
+        }
+        return current_point;
+    }
+
+    fn attempt_move(&self, position: &Point, direction: &Direction) -> Point {
+        let movement_vector: Point = direction.as_vector();
+        let attempt_move: Point = *position + movement_vector;
+
+        return match self.places.get(&attempt_move) {
+            Some(Tile::Clear) => attempt_move,
+            Some(Tile::Stone) => *position,
+            Some(Tile::None) => panic!("This shouldn't be possible"),
+            None => *position,
+        }
+    }
+
     pub fn render_map(&self) {
-        for i in 1..=self.max_x.unwrap() {
-            for j in 1..=self.max_y.unwrap() {
+        for j in 1..=self.max_y.unwrap() {
+            for i in 1..=self.max_x.unwrap() {
                 let this_point: Point = Point::new(i, j);
                 match self.places.get(&this_point) {
                     Some(tile) => print!("{}", tile.to_char()),
                     None => print!(" "),
                 };
+            }
+            print!("\n");
+            stdout().flush().expect("This should print to screen");
+        }
+        println!("");
+    }
+
+    pub fn render_map_with_current_position(&self, position: &Point, direction: &Direction) {
+        for j in 1..=self.max_y.unwrap() {
+            for i in 1..=self.max_x.unwrap() {
+                let this_point: Point = Point::new(i, j);
+                if this_point == *position {
+                    print!("{}", direction.as_char());
+                }
+                else {
+                    match self.places.get(&this_point) {
+                        Some(tile) => print!("{}", tile.to_char()),
+                        None => print!(" "),
+                    };
+                }
             }
             print!("\n");
             stdout().flush().expect("This should print to screen");

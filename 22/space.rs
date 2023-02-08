@@ -57,6 +57,15 @@ impl Direction {
             Self::Up => 3,
         };
     }
+
+    pub fn as_char(&self) -> char {
+        return match self {
+            Self::Right => '>',
+            Self::Down => 'v',
+            Self::Left => '<',
+            Self::Up => '^',
+        };
+    }
 }
 
 
