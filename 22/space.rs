@@ -1,11 +1,14 @@
-use std::ops::{Add,Sub,Neg,AddAssign};
+use std::ops::{Add,Sub,Neg,AddAssign,Deref};
 use std::fmt;
 
 pub type StdInt = i64;
 
+#[derive(Debug,Copy,Clone,Hash)]
 pub enum Rotation {
     Left,
     Right,
+    Half,
+    None,
 }
 
 impl Rotation {
@@ -13,12 +16,23 @@ impl Rotation {
         return match string.chars().next().unwrap() {
             'R' => Self::Right,
             'L' => Self::Left,
+            'H' => Self::Half,
+            'N' => Self::None,
             other => panic!("'{}' is not a valid character for rotation", other),
+        };
+    }
+
+    pub fn inverse(&self) -> Self {
+        return match self {
+            Self::Left => Self::Right,
+            Self::Right => Self::Left,
+            Self::Half => Self::Half,
+            Self::None => Self::None,
         };
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug,Copy,Clone,Hash)]
 pub enum Direction {
     Up,
     Down,
@@ -27,8 +41,8 @@ pub enum Direction {
 }
 
 impl Direction {
-    pub fn rotate(&self, rotation: Rotation) -> Direction {
-        return match (self, rotation) {
+    pub fn rotate(&self, rotation: &Rotation) -> Direction {
+        return match (self, *rotation) {
             (Self::Up, Rotation::Left) => Self::Left,
             (Self::Left, Rotation::Left) => Self::Down,
             (Self::Down, Rotation::Left) => Self::Right,
@@ -37,6 +51,14 @@ impl Direction {
             (Self::Left, Rotation::Right) => Self::Up,
             (Self::Down, Rotation::Right) => Self::Left,
             (Self::Right, Rotation::Right) => Self::Down,
+            (Self::Up, Rotation::Half) => Self::Down,
+            (Self::Left, Rotation::Half) => Self::Right,
+            (Self::Down, Rotation::Half) => Self::Up,
+            (Self::Right, Rotation::Half) => Self::Left,
+            (Self::Up, Rotation::None) => Self::Up,
+            (Self::Left, Rotation::None) => Self::Left,
+            (Self::Down, Rotation::None) => Self::Down,
+            (Self::Right, Rotation::None) => Self::Right,
         }
     }
 
@@ -82,8 +104,8 @@ impl Point {
     }
 
     #[allow(dead_code)]
-    pub fn from_direction(direction: Direction) -> Self {
-        return match direction {
+    pub fn from_direction(direction: &Direction) -> Self {
+        return match *direction {
             Direction::Up => Self::new(0, -1),
             Direction::Down => Self::new(0, 1),
             Direction::Left => Self::new(-1, 0),
@@ -127,8 +149,52 @@ impl PartialEq for Point {
 
 impl Eq for Point {}
 
+impl Deref for Point {
+    type Target = Point;
+
+    fn deref(&self) -> &Self::Target {
+        return &self;
+    }
+}
+
 impl fmt::Display for Point {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         return write!(f, "({}, {})", self.x, self.y);
+    }
+}
+
+#[derive(Debug,Copy,Clone,Hash)]
+pub struct Marker {
+    point: Point,
+    direction: Direction,
+}
+
+impl Marker {
+    pub fn new(point: Point, direction: Direction) -> Self {
+        return Self{point: point, direction: direction};
+    }
+
+    pub fn get_position(&self) -> Point {
+        return self.point;
+    }
+
+    pub fn get_direction(&self) -> Direction {
+        return self.direction;
+    }
+
+    pub fn get_rotated_marker(&self, rotation: &Rotation) -> Self {
+        return Self::new(self.get_position(), self.direction.rotate(rotation));
+    }
+
+    pub fn next(&self) -> Marker {
+        let movement_vector: Point = self.get_direction().as_vector();
+        let new_position: Point = self.get_position() + movement_vector;
+        return Self::new(new_position, self.direction);
+    }
+}
+
+impl fmt::Display for Marker {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        return write!(f, "{}{}", self.point, self.direction.as_char());
     }
 }
