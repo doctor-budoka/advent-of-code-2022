@@ -8,6 +8,7 @@ pub enum Rotation {
     Right,
 }
 
+#[derive(Debug)]
 pub enum Direction {
     Up,
     Down,

@@ -1,8 +1,9 @@
 use std::env;
 use std::fs;
+use std::collections::HashSet;
 
 mod space;
-use space::{Point,StdInt};
+use space::{Direction,Point,StdInt};
 mod map;
 use map::{Map,Tile};
 
@@ -11,10 +12,20 @@ fn main() {
     let file_name = &env_args[1];
     println!("File name is '{}'. Reading input...", file_name);
     let input = fs::read_to_string(file_name).expect("Should have been able to read the file"); 
+    let (map, instructions, current_point, current_direction): (Map, Vec<String>, Point, Direction) = get_input_data(input);
 
+    map.render_map();
+    println!("Instructions: {:?}, Initial point: {}, Initial direction: '{:?}'", instructions, current_point, current_direction);
+    println!("Data loaded. Traversing map...");
+} 
+
+
+fn get_input_data(input: String) -> (Map, Vec<String>, Point, Direction) {
+    let digits: HashSet<char> = HashSet::from(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
     let mut map: Map = Map::new(); 
     let mut initial_point: Option<Point> = None;
     let mut read_map_state = true;
+    let mut instructions: Vec<String> = Vec::new();
     for (i, line) in input.lines().enumerate() {
         if line.trim() == "" {
             read_map_state = false;
@@ -33,9 +44,21 @@ fn main() {
             }
         }
         else {
-            continue;
+            let mut curr_string: String = "".to_string();
+            for instruction_char in line.chars() {
+                if digits.contains(&instruction_char) {
+                    curr_string.push(instruction_char);
+                }
+                else {
+                    instructions.push(curr_string);
+                    instructions.push(instruction_char.to_string());
+                    curr_string = "".to_string();
+                }
+            }
+            if curr_string.len() > 0 {
+                instructions.push(curr_string);
+            }
         }
     }
-    map.render_map();
-    println!("Data loaded. Traversing map...");
-} 
+    return (map, instructions, initial_point.unwrap(), Direction::Right);
+}
