@@ -1,4 +1,4 @@
-use std::ops::{Add,Sub,Neg};
+use std::ops::{Add,Sub,Neg,AddAssign};
 use std::fmt;
 
 pub type StdInt = i64;
@@ -101,6 +101,12 @@ impl Sub for Point {
     type Output = Self;
     fn sub(self, other: Self) -> Self {
         return Self::new(self.x - other.x, self.y - other.y);
+    }
+}
+
+impl AddAssign for Point {
+    fn add_assign(&mut self, other: Self) {
+        *self = *self + other;
     }
 }
 

@@ -67,8 +67,19 @@ impl Map {
             Some(Tile::Clear) => attempt_move,
             Some(Tile::Stone) => *position,
             Some(Tile::None) => panic!("This shouldn't be possible"),
-            None => *position,
+            None => self.walk_back_if_possible(&position, &direction),
         }
+    }
+
+    fn walk_back_if_possible(&self, position: &Point, direction: &Direction) -> Point {
+        let opposite_direction: Point = -direction.as_vector();
+        let mut last_point: Point = *position;
+        let mut current_point: Point = *position + opposite_direction;
+        while let Some(_) = self.places.get(&current_point) {
+                last_point += opposite_direction;
+                current_point += opposite_direction;
+        }
+        return if *self.places.get(&last_point).unwrap() == Tile::Clear {last_point} else {*position};
     }
 
     pub fn render_map(&self) {
