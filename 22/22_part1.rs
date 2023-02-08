@@ -14,8 +14,7 @@ fn main() {
     let input = fs::read_to_string(file_name).expect("Should have been able to read the file"); 
     let (map, instructions, mut current_point, mut current_direction): (Map, Vec<String>, Point, Direction) = get_input_data(input);
 
-    map.render_map();
-    println!("Instructions: {:?}, Initial point: {}, Initial direction: '{:?}'", instructions, current_point, current_direction);
+    println!("Initial state: {}, '{:?}'", current_point, current_direction);
     println!("Data loaded. Traversing map...");
 
     for instruction in instructions {
@@ -23,8 +22,6 @@ fn main() {
             Ok(distance) => current_point = map.get_new_position(&current_point, &current_direction, distance),
             Err(_) => current_direction = current_direction.rotate(Rotation::from_string(&instruction)),
         }
-        println!("Instruction: {}, new state: {}, {:?}", &instruction, &current_point, &current_direction);
-        map.render_map_with_current_position(&current_point, &current_direction);
     }
     println!("Final position: {}, Final direction: {:?}", &current_point, &current_direction);
     let password: StdInt = (1000 * current_point.y) + (4 * current_point.x) + current_direction.as_int();

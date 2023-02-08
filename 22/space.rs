@@ -58,6 +58,7 @@ impl Direction {
         };
     }
 
+    #[allow(dead_code)]
     pub fn as_char(&self) -> char {
         return match self {
             Self::Right => '>',
@@ -80,6 +81,7 @@ impl Point {
         return Point {x: x, y: y}
     }
 
+    #[allow(dead_code)]
     pub fn from_direction(direction: Direction) -> Self {
         return match direction {
             Direction::Up => Self::new(0, -1),

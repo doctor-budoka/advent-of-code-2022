@@ -53,7 +53,7 @@ impl Map {
 
     pub fn get_new_position(&self, position: &Point, direction: &Direction, distance: StdInt) -> Point {
         let mut current_point = *position;
-        for i in 0..distance {
+        for _ in 0..distance {
             current_point = self.attempt_move(&current_point, direction);
         }
         return current_point;
@@ -82,6 +82,7 @@ impl Map {
         return if *self.places.get(&last_point).unwrap() == Tile::Clear {last_point} else {*position};
     }
 
+    #[allow(dead_code)]
     pub fn render_map(&self) {
         for j in 1..=self.max_y.unwrap() {
             for i in 1..=self.max_x.unwrap() {
@@ -97,6 +98,7 @@ impl Map {
         println!("");
     }
 
+    #[allow(dead_code)]
     pub fn render_map_with_current_position(&self, position: &Point, direction: &Direction) {
         for j in 1..=self.max_y.unwrap() {
             for i in 1..=self.max_x.unwrap() {
