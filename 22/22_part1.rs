@@ -17,6 +17,13 @@ fn main() {
     map.render_map();
     println!("Instructions: {:?}, Initial point: {}, Initial direction: '{:?}'", instructions, current_point, current_direction);
     println!("Data loaded. Traversing map...");
+
+    for instruction in instructions {
+        continue;
+    }
+    println!("Final position: {}, Final direction: {:?}", &current_point, &current_direction);
+    let password: StdInt = (1000 * current_point.y) + (4 * current_point.x) + current_direction.as_int();
+    println!("Password is {}", password);
 } 
 
 

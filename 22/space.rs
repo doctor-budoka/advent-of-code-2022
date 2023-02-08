@@ -38,6 +38,15 @@ impl Direction {
             Self::Right => Point::new(1, 0),
         }
     }
+
+    pub fn as_int(&self) -> StdInt {
+        return match self {
+            Self::Right => 0,
+            Self::Down => 1,
+            Self::Left => 2,
+            Self::Up => 3,
+        };
+    }
 }
 
 
