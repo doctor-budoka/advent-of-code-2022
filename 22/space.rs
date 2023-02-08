@@ -8,6 +8,16 @@ pub enum Rotation {
     Right,
 }
 
+impl Rotation {
+    pub fn from_string(string: &String) -> Self {
+        return match string.chars().next().unwrap() {
+            'R' => Self::Right,
+            'L' => Self::Left,
+            other => panic!("'{}' is not a valid character for rotation", other),
+        };
+    }
+}
+
 #[derive(Debug)]
 pub enum Direction {
     Up,
@@ -24,9 +34,9 @@ impl Direction {
             (Self::Down, Rotation::Left) => Self::Right,
             (Self::Right, Rotation::Left) => Self::Up,
             (Self::Up, Rotation::Right) => Self::Right,
-            (Self::Left, Rotation::Right) => Self::Down,
+            (Self::Left, Rotation::Right) => Self::Up,
             (Self::Down, Rotation::Right) => Self::Left,
-            (Self::Right, Rotation::Right) => Self::Up,
+            (Self::Right, Rotation::Right) => Self::Down,
         }
     }
 
