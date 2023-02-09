@@ -137,6 +137,17 @@ impl Point {
     pub fn scalar_division(&self, scalar: StdInt) -> Self {
         return Self::new(self.x / scalar, self.y / scalar);
     }
+
+    pub fn is_neighbour(&self, other: &Point) -> bool {
+        if self == other {return true;}
+        for direction in Direction::get_directions() {
+            let dir_vec = direction.as_vector();
+            if (dir_vec + *self) == *other {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 
 impl Add for Point { 

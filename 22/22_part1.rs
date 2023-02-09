@@ -1,5 +1,6 @@
 use std::env;
 use std::fs;
+use std::io::stdin;
 use std::collections::HashMap;
 
 mod space;
@@ -20,13 +21,36 @@ fn main() {
     let map = glue_faces(&unglued_map);
 
     let mut marker_trail: HashMap<Point,Direction> = HashMap::new();
-    println!("Initial state: {}, num instructions: {}", current_marker, &instructions.len());
+    let total_instructions = &instructions.len();
+    println!("Initial state: {}, num instructions: {}", current_marker, &total_instructions);
     println!("Data loaded. Traversing map...");
 
-    for instruction in instructions {
+    for (i, instruction) in instructions.iter().enumerate() {
         match instruction.parse::<StdInt>() {
             Ok(distance) => {
                 let (new_marker, new_trail) = map.get_new_position_with_trail(&current_marker, distance);
+                let new_face = map.find_face(&current_marker.get_position());
+                let current_face = map.find_face(&new_marker.get_position());
+                let diff = new_marker.get_position() - current_marker.get_position();
+                let diff_len = diff.length();
+                let dir = if diff_len == 0 {Point::new(0, 0)} else {diff.scalar_division(diff_len)};
+                let flat_direction = match (dir.x, dir.y) {
+                    (1, 0) => Direction::Right,
+                    (-1, 0) => Direction::Left,
+                    (0, 1) => Direction::Down,
+                    (0, -1) => Direction::Up,
+                    (0, 0) => current_marker.get_direction(),
+                    other => panic!("Unusual direction detected: ({}, {})", other.0, other.1),
+                };
+                if flat_direction != current_marker.get_direction() {
+                    println!("Rendering glue transition for instruction {}/{}: {} from {} to {}...", i + 1, total_instructions, instruction, current_marker, new_marker);
+                    map.render_map_with_trail(&new_trail);
+                    println!("Rendered glue transition for instruction {}/{}: {} from {} to {}", i + 1, total_instructions, instruction, current_marker, new_marker);
+                    println!("Faces: {} to {}", current_face, new_face);
+                    let mut input = String::new();
+                    stdin().read_line(&mut input).expect("error: unable to read user input");
+                    println!("{}",input);
+                }
                 current_marker = new_marker;
                 marker_trail.extend(new_trail);
             },
@@ -45,7 +69,7 @@ fn main() {
     let password: StdInt = (1000 * current_point.y) + (4 * current_point.x) + current_direction.as_int();
     println!("Password is {}", password);
     println!("Rendering map...");
-    map.render_map_with_trail(marker_trail);
+    map.render_map_with_trail(&marker_trail);
 } 
 
 

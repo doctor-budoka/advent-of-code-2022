@@ -201,7 +201,7 @@ impl Map {
     }
 
     #[allow(dead_code)]
-    pub fn render_map_with_trail(&self, trail: HashMap<Point,Direction>) {
+    pub fn render_map_with_trail(&self, trail: &HashMap<Point,Direction>) {
         for j in 1..=self.max_y.unwrap() {
             for i in 1..=self.max_x.unwrap() {
                 let this_point: Point = Point::new(i, j);
