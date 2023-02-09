@@ -116,16 +116,39 @@ impl Map {
     }
 
     fn wrap_around_if_possible(&self, marker: &Marker) -> Marker {
-        // let current_face = self.find_face(position);
-        // if let Some((new_face, rotation)) = current_face.get_glue_from_direction(direction);
-        // let mut last_point: Point = *position;
-        // let mut current_point: Point = *position + opposite_direction;
-        // while let Some(_) = self.places.get(&current_point) {
-        //         last_point += opposite_direction;
-        //         current_point += opposite_direction;
-        // }
-        // return if *self.places.get(&last_point).unwrap() == Tile::Clear {last_point} else {*position};
-        return *marker;
+        let current_face = self.find_face(&marker.get_position());
+        let current_face_borrowed = self.faces.get(&current_face).expect("This face should exist").as_ref().borrow();
+        if let Some((new_face, rotation)) = current_face_borrowed.get_glue_from_direction(&marker.get_direction()) {
+            let new_direction = marker.get_direction().rotate(&rotation);
+            let point_on_face: Point = self.find_point_on_face(&marker.get_position());
+            let new_position_on_face_without_rotation = match marker.get_direction() {
+                Direction::Up => Point::new(point_on_face.x, self.face_size),
+                Direction::Down => Point::new(point_on_face.x, 1),
+                Direction::Left => Point::new(self.face_size, point_on_face.y),
+                Direction::Right => Point::new(1, point_on_face.y),
+            };
+            let new_position_on_face = match rotation {
+                Rotation::None => new_position_on_face_without_rotation,
+                Rotation::Half => Point::new(
+                    self.face_size - new_position_on_face_without_rotation.x + 1,  
+                    self.face_size - new_position_on_face_without_rotation.y + 1
+                ),
+                Rotation::Left => Point::new(
+                    new_position_on_face_without_rotation.y,
+                    self.face_size - new_position_on_face_without_rotation.x + 1,
+                ),
+                Rotation::Right => Point::new(
+                    self.face_size - new_position_on_face_without_rotation.y + 1,
+                    new_position_on_face_without_rotation.x,
+                ),
+            };
+            let new_position = self.flatten_point(&new_face, &new_position_on_face);
+            return Marker::new(new_position, new_direction);
+        }
+        else {
+            // If there is no glue, we treat the edge of the face like a wall
+            return *marker;
+        }
     }
 
     #[allow(dead_code)]
