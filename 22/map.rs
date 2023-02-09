@@ -46,6 +46,7 @@ impl Map {
         face_mut.add_glue(face2, direction, rotation);
     }
 
+    #[allow(dead_code)]
     pub fn is_face_fully_glued(&self, face: &Point) -> bool {
         return self.faces.get(face).unwrap().as_ref().borrow().is_fully_glued();
     }
@@ -105,6 +106,7 @@ impl Map {
         return current_marker;
     }
 
+    #[allow(dead_code)]
     pub fn get_new_position_with_trail(&self, marker: &Marker, distance: StdInt) -> (Marker, HashMap<Point,Direction>) {
         let mut current_marker: Marker = *marker;
         let mut trail: HashMap<Point,Direction> = HashMap::new();

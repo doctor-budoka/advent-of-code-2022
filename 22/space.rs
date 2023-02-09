@@ -126,18 +126,22 @@ impl Point {
         }
     }
 
+    #[allow(dead_code)]
     pub fn length(&self) -> StdInt {
         return self.x.abs() + self.y.abs();
     }
 
+    #[allow(dead_code)]
     pub fn scalar_multiplication(&self, scalar: StdInt) -> Self {
         return Self::new(self.x * scalar, self.y * scalar);
     }
 
+    #[allow(dead_code)]
     pub fn scalar_division(&self, scalar: StdInt) -> Self {
         return Self::new(self.x / scalar, self.y / scalar);
     }
 
+    #[allow(dead_code)]
     pub fn is_neighbour(&self, other: &Point) -> bool {
         if self == other {return true;}
         for direction in Direction::get_directions() {

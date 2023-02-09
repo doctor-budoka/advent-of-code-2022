@@ -52,32 +52,16 @@ impl Face {
         self.places.insert(*point, *tile);
     }
 
-    pub fn add_left_edge(&mut self, face: &Point, rotation: &Rotation) {
-        self.left = Some((*face, *rotation));
-    }
-
     pub fn get_left_glue(&self) -> Option<EdgeGlue> {
         return self.left;
-    }
-
-    pub fn add_right_edge(&mut self, face: &Point, rotation: &Rotation) {
-        self.right = Some((*face, *rotation));
     }
 
     pub fn get_right_glue(&self) -> Option<EdgeGlue> {
         return self.right;
     }
 
-    pub fn add_top_edge(&mut self, face: &Point, rotation: &Rotation) {
-        self.top = Some((*face, *rotation));
-    }
-
     pub fn get_top_glue(&self) -> Option<EdgeGlue> {
         return self.top;
-    }
-
-    pub fn add_bottom_edge(&mut self, face: &Point, rotation: &Rotation) {
-        self.bottom = Some((*face, *rotation));
     }
 
     pub fn get_bottom_glue(&self) -> Option<EdgeGlue> {
@@ -122,6 +106,7 @@ impl Face {
         self.right = Some((*face, *rotation));
     }
 
+    #[allow(dead_code)]
     pub fn is_fully_glued(&self) -> bool {
         for direction in Direction::get_directions() {
             if !self.is_glued_in_direction(&direction) {
@@ -131,6 +116,7 @@ impl Face {
         return true;
     }
 
+    #[allow(dead_code)]
     pub fn is_glued_in_direction(&self, direction: &Direction) -> bool {
         return match direction {
             Direction::Up => self.is_top_glued(),
@@ -140,6 +126,7 @@ impl Face {
         }
     }
 
+    #[allow(dead_code)]
     pub fn is_top_glued(&self) -> bool {
         return match self.top {
             Some(_) => true,
@@ -147,6 +134,7 @@ impl Face {
         }
     }
 
+    #[allow(dead_code)]
     pub fn is_bottom_glued(&self) -> bool {
         return match self.bottom {
             Some(_) => true,
@@ -154,6 +142,7 @@ impl Face {
         }
     }
 
+    #[allow(dead_code)]
     pub fn is_left_glued(&self) -> bool {
         return match self.left {
             Some(_) => true,
@@ -161,6 +150,7 @@ impl Face {
         }
     }
 
+    #[allow(dead_code)]
     pub fn is_right_glued(&self) -> bool {
         return match self.right {
             Some(_) => true,
