@@ -105,7 +105,18 @@ impl Map {
         return current_marker;
     }
 
-    fn attempt_move(&self, marker: &Marker) -> Marker {
+    pub fn get_new_position_with_trail(&self, marker: &Marker, distance: StdInt) -> (Marker, HashMap<Point,Direction>) {
+        let mut current_marker: Marker = *marker;
+        let mut trail: HashMap<Point,Direction> = HashMap::new();
+        trail.insert(current_marker.get_position(), current_marker.get_direction());
+        for _ in 0..distance {
+            current_marker = self.attempt_move(&current_marker);
+            trail.insert(current_marker.get_position(), current_marker.get_direction());
+        }
+        return (current_marker, trail);
+    }
+
+    pub fn attempt_move(&self, marker: &Marker) -> Marker {
         let attempt_marker: Marker = marker.next();
 
         return match self.get_tile(&attempt_marker.get_position()) {
@@ -173,8 +184,29 @@ impl Map {
         for j in 1..=self.max_y.unwrap() {
             for i in 1..=self.max_x.unwrap() {
                 let this_point: Point = Point::new(i, j);
-                if this_point == *marker_pos {
+                if this_point == marker_pos {
                     print!("{}", marker.get_direction().as_char());
+                }
+                else {
+                    match self.get_tile(&this_point) {
+                        Some(tile) => print!("{}", tile.to_char()),
+                        None => print!(" "),
+                    };
+                }
+            }
+            print!("\n");
+            stdout().flush().expect("This should print to screen");
+        }
+        println!("");
+    }
+
+    #[allow(dead_code)]
+    pub fn render_map_with_trail(&self, trail: HashMap<Point,Direction>) {
+        for j in 1..=self.max_y.unwrap() {
+            for i in 1..=self.max_x.unwrap() {
+                let this_point: Point = Point::new(i, j);
+                if trail.contains_key(&this_point) {
+                    print!("{}", trail.get(&this_point).unwrap().as_char());
                 }
                 else {
                     match self.get_tile(&this_point) {

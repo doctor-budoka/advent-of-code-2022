@@ -1,4 +1,4 @@
-use std::ops::{Add,Sub,Neg,AddAssign,Deref};
+use std::ops::{Add,Sub,Neg,AddAssign};
 use std::fmt;
 
 pub type StdInt = i64;
@@ -125,6 +125,18 @@ impl Point {
             Direction::Right => Self::new(1, 0),
         }
     }
+
+    pub fn length(&self) -> StdInt {
+        return self.x.abs() + self.y.abs();
+    }
+
+    pub fn scalar_multiplication(&self, scalar: StdInt) -> Self {
+        return Self::new(self.x * scalar, self.y * scalar);
+    }
+
+    pub fn scalar_division(&self, scalar: StdInt) -> Self {
+        return Self::new(self.x / scalar, self.y / scalar);
+    }
 }
 
 impl Add for Point { 
@@ -161,14 +173,6 @@ impl PartialEq for Point {
 }
 
 impl Eq for Point {}
-
-impl Deref for Point {
-    type Target = Point;
-
-    fn deref(&self) -> &Self::Target {
-        return &self;
-    }
-}
 
 impl fmt::Display for Point {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
