@@ -4,7 +4,7 @@ use std::io::Write;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use space::{Marker,Point,StdInt};
+use space::{Direction,Marker,Point,Rotation,StdInt};
 use face::{Face,Tile};
 
 
@@ -17,11 +17,37 @@ pub struct Map {
 
 impl Map {
     pub fn new(size: StdInt) -> Self {
-        return Map {faces: HashMap::new(), face_size: size, max_x: None, max_y: None};
+        return Self {faces: HashMap::new(), face_size: size, max_x: None, max_y: None};
+    }
+
+    pub fn get_max_x(&self) -> Option<StdInt> {
+        return self.max_x
+    }
+
+    pub fn get_max_y(&self) -> Option<StdInt> {
+        return self.max_y
     }
 
     pub fn find_face(&self, point: &Point) -> Point {
         return Point::new(((point.x - 1) / self.face_size) + 1, ((point.y - 1) / self.face_size) + 1);
+    }
+
+    pub fn has_face(&self, face: &Point) -> bool {
+        return self.faces.contains_key(face);
+    }
+
+    pub fn bidirectional_glue_faces(&mut self, face1: &Point, face2: &Point, direction: &Direction, rotation: &Rotation) {
+        self.glue_faces(face1, face2, direction, rotation);
+        self.glue_faces(face2, face1, &direction.inverse(), &rotation.inverse());
+    }
+
+    pub fn glue_faces(&mut self, face1: &Point, face2: &Point, direction: &Direction, rotation: &Rotation) {
+        let mut face_mut = self.faces.get(face1).unwrap().as_ref().borrow_mut();
+        face_mut.add_glue(face2, direction, rotation);
+    }
+
+    pub fn is_face_fully_glued(&self, face: &Point) -> bool {
+        return self.faces.get(face).unwrap().as_ref().borrow().is_fully_glued();
     }
 
     pub fn find_point_on_face(&self, point: &Point) -> Point {
@@ -138,5 +164,14 @@ impl Map {
             stdout().flush().expect("This should print to screen");
         }
         println!("");
+    }
+
+    pub fn create_copy(&self) -> Self {
+        let mut hashmap_copy: HashMap<Point, Rc<RefCell<Face>>> = HashMap::new();
+        for (key, value) in self.faces.iter() {
+            let new_value: Rc<RefCell<Face>> = Rc::new(RefCell::new(value.as_ref().borrow().create_copy()));
+            hashmap_copy.insert(*key, new_value);
+        }
+        return Self {faces: hashmap_copy, face_size: self.face_size, max_x: self.max_x, max_y: self.max_y};
     }
 }

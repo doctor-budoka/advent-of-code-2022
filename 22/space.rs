@@ -32,7 +32,7 @@ impl Rotation {
     }
 }
 
-#[derive(Debug,Copy,Clone,Hash)]
+#[derive(Debug,Copy,Clone,Hash,PartialEq,Eq)]
 pub enum Direction {
     Up,
     Down,
@@ -88,6 +88,19 @@ impl Direction {
             Self::Left => '<',
             Self::Up => '^',
         };
+    }
+
+    pub fn inverse(&self) -> Self {
+        return match self {
+            Self::Right => Self::Left,
+            Self::Left => Self::Right,
+            Self::Up => Self::Down,
+            Self::Down => Self::Up,
+        };
+    }
+
+    pub fn get_directions() -> Vec<Self> {
+        return vec![Self::Up, Self::Left, Self::Down, Self::Right];
     }
 }
 
