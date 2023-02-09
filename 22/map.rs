@@ -154,7 +154,13 @@ impl Map {
                 ),
             };
             let new_position = self.flatten_point(&new_face, &new_position_on_face);
-            return Marker::new(new_position, new_direction);
+            // If the new_position is clear, we can move. If not, we stay put.
+            if self.get_tile(&new_position) == Some(Tile::Clear) {
+                return Marker::new(new_position, new_direction);
+            }
+            else {
+                return *marker;
+            }
         }
         else {
             // If there is no glue, we treat the edge of the face like a wall
