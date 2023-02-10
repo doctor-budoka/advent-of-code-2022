@@ -51,6 +51,10 @@ impl Map {
         return self.faces.get(face).unwrap().as_ref().borrow().is_fully_glued();
     }
 
+    pub fn get_faces_unglued_directions(&self, face: &Point) -> Vec<Direction> {
+        return self.faces.get(face).unwrap().as_ref().borrow().get_unglued_directions();
+    }
+
     pub fn find_point_on_face(&self, point: &Point) -> Point {
         let new_x = ((point.x - 1) % self.face_size) + 1;
         let new_y = ((point.y - 1) % self.face_size) + 1;

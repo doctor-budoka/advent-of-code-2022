@@ -116,6 +116,16 @@ impl Face {
         return true;
     }
 
+    pub fn get_unglued_directions(&self) -> Vec<Direction> {
+        let mut unglued: Vec<Direction> = Vec::new();
+        for direction in Direction::get_directions() {
+            if !self.is_glued_in_direction(&direction) {
+                unglued.push(direction);
+            }
+        }
+        return unglued;
+    }
+
     #[allow(dead_code)]
     pub fn is_glued_in_direction(&self, direction: &Direction) -> bool {
         return match direction {
