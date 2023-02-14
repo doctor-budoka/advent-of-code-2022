@@ -71,8 +71,8 @@ fn find_neighbours(map: &Map, start: &Point) -> HashMap<Direction, EdgeGlue> {
 
         let new_tangent = get_new_tangent(start, &face, &direction3d, &previous_in_path);
         let current_tangent: Direction3D = Direction3D::from2d_as_face_direction_rel_z(&direction);
-        let tangent_rotation: Rotation = Direction3D::get_2d_rotation_from_tangent_change_on_z_face(&current_tangent, &new_tangent);
-        edge_glues.insert(direction, (face, tangent_rotation.inverse()));
+        let face_rotation: Rotation = Direction3D::get_2d_rotation_from_tangent_change_on_z_face(&current_tangent, &new_tangent);
+        edge_glues.insert(direction, (face, face_rotation));
     }
     return edge_glues;
 }

@@ -15,19 +15,9 @@ pub enum Direction3D {
 impl Direction3D {
     pub fn rotate_around(&self, axis: &Self) -> Self {
         if (axis == self) || (*axis == self.neg()) {
-            return *axis;
+            return *self;
         }
         return *axis * *self;
-    }
-
-    pub fn from2d_as_rotation_axis_rel_z(direction: &Direction) -> Self {
-        return match direction {
-            Direction::Up => Self::NegX,
-            Direction::Down => Self::X,
-            Direction::Right => Self::Y,
-            Direction::Left => Self::NegY,
-        };
-
     }
 
     pub fn from2d_as_face_direction_rel_z(direction: &Direction) -> Self {
@@ -41,15 +31,21 @@ impl Direction3D {
 
     pub fn get_2d_rotation_from_tangent_change_on_z_face(start: &Direction3D, end: &Direction3D) -> Rotation {
         let rotation = match (start, end) {
-            (_, Self::NegZ) => Rotation::None,
-            (_, Self::Z) => Rotation::Half,
-            (Self::Y, Self::NegX) | (Self::NegX, Self::NegY) | (Self::NegY, Self::X) | (Self::X,Self::Y) => Rotation::Left,
-            (Self::NegY, Self::NegX) | (Self::X, Self::NegY) | (Self::Y, Self::X) | (Self::NegX,Self::Y) => Rotation::Right,
-            (Self::Y,Self::Y) | (Self::X, Self::X) | (Self::NegY, Self::NegY) | (Self::NegX, Self::NegX) => Rotation::None,
-            (Self::Y,Self::NegY) | (Self::X, Self::NegX) | (Self::NegY, Self::Y) | (Self::NegX, Self::X) => Rotation::Half,
+            (Self::Y, Self::X) => Rotation::Right,
+            (Self::Y, Self::NegX) => Rotation::Left,
+            (Self::NegY, Self::X) => Rotation::Left,
+            (Self::NegY, Self::NegX) => Rotation::Right,
+            (Self::X, Self::Y) => Rotation::Left,
+            (Self::X, Self::NegY) => Rotation::Right,
+            (Self::NegX, Self::Y) => Rotation::Right,
+            (Self::NegX, Self::NegY) => Rotation::Left,
+            (Self::Y, Self::Y) | (Self::Y, Self::NegY) | (Self::NegY, Self::Y) | (Self::NegY, Self::NegY) => panic!("Start and end tangents can never be aligned"),
+            (Self::X, Self::X) | (Self::X, Self::NegX) | (Self::NegX, Self::X) | (Self::NegX, Self::NegX) => panic!("Start and end tangents can never be aligned"),
+            (Self::Zero, _) | (_, Self::Zero) => panic!("Zero should never be a tangent!"),
             (Self::Z, _) => panic!("Z shouldn't be a starting tangent!"),
             (Self::NegZ, _) => panic!("-Z shouldn't be a starting tangent!"),
-            (Self::Zero, _) | (_, Self::Zero) => panic!("Zero should never be a tangent!")
+            (_, Self::NegZ) => Rotation::None,
+            (_, Self::Z) => Rotation::Half,
         };
         return rotation;
     }
@@ -100,10 +96,10 @@ impl Orientation {
     pub fn new() -> Self {
         return Self{
             face: Direction3D::Z,
-            left: Direction3D::from2d_as_rotation_axis_rel_z(&Direction::Left),
-            right: Direction3D::from2d_as_rotation_axis_rel_z(&Direction::Right),
-            up: Direction3D::from2d_as_rotation_axis_rel_z(&Direction::Up),
-            down: Direction3D::from2d_as_rotation_axis_rel_z(&Direction::Down),
+            left: Direction3D::from2d_as_face_direction_rel_z(&Direction::Left),
+            right: Direction3D::from2d_as_face_direction_rel_z(&Direction::Right),
+            up: Direction3D::from2d_as_face_direction_rel_z(&Direction::Up),
+            down: Direction3D::from2d_as_face_direction_rel_z(&Direction::Down),
         }
     }
 
@@ -119,10 +115,10 @@ impl Orientation {
 
     pub fn get_rotation_axis_for_direction(&self, direction: &Direction) -> Direction3D {
         return match direction {
-            Direction::Up => self.up,
-            Direction::Down => self.down,
-            Direction::Left => self.left,
-            Direction::Right => self.right,
+            Direction::Up => self.left,
+            Direction::Down => self.right,
+            Direction::Left => self.down,
+            Direction::Right => self.up,
         };
     }
 

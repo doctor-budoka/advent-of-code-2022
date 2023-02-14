@@ -150,7 +150,7 @@ impl Map {
     fn get_position_on_other_glued_edge(&self, marker: &Marker, glue: &EdgeGlue) -> Marker {
         let (new_face, rotation) = glue;
         let current_direction: Direction = marker.get_direction();
-        let new_direction:Direction = marker.get_direction().rotate(&rotation);
+        let new_direction:Direction = marker.get_direction().rotate(&rotation.inverse());
         let point_on_face: Point = self.find_point_on_face(&marker.get_position());
         let new_position_on_face = self.move_position_over_edge(&point_on_face, &current_direction, &rotation);
         let new_flat_position = self.flatten_point(&new_face, &new_position_on_face);
@@ -179,12 +179,12 @@ impl Map {
                 self.face_size - pre_rotation.y + 1
             ),
             Rotation::Left => Point::new(
-                pre_rotation.y,
-                self.face_size - pre_rotation.x + 1,
-            ),
-            Rotation::Right => Point::new(
                 self.face_size - pre_rotation.y + 1,
                 pre_rotation.x,
+            ),
+            Rotation::Right => Point::new(
+                pre_rotation.y,
+                self.face_size - pre_rotation.x + 1,
             ),
         };
     }
