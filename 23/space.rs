@@ -15,6 +15,47 @@ pub enum Direction {
     NorthWest,
 }
 
+impl Direction {
+    pub fn get_directions() -> Vec<Direction> {
+        return vec![
+            Self::North,
+            Self::NorthEast,
+            Self::East,
+            Self::SouthEast,
+            Self::South,
+            Self::SouthWest,
+            Self::West,
+            Self::NorthWest
+        ];
+    }
+
+    pub fn get_northerlies() -> Vec<Direction> {
+        return vec![Self::North, Self::NorthEast, Self::NorthWest];
+    }
+
+    pub fn get_southerlies() -> Vec<Direction> {
+        return vec![Self::South, Self::SouthEast, Self::SouthWest];
+    }
+
+    pub fn get_westerlies() -> Vec<Direction> {
+        return vec![Self::West, Self::NorthWest, Self::SouthWest];
+    }
+
+    pub fn get_easterlies() -> Vec<Direction> {
+        return vec![Self::East, Self::NorthEast, Self::SouthEast];
+    }
+
+    pub fn get_directionlies(&self) -> Vec<Direction> {
+        return match self {
+            Self::North => Self::get_northerlies(),
+            Self::South => Self::get_southerlies(),
+            Self::West => Self::get_westerlies(),
+            Self::East => Self::get_easterlies(),
+            _ => panic!("directionlies not implemented for secondary directions"),
+        };
+    }
+}
+
 #[derive(Debug,Copy,Clone,Hash)]
 pub struct Point {
     pub x: StdInt,
