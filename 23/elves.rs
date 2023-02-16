@@ -45,13 +45,14 @@ impl Elves {
         } 
     }
 
-    pub fn run_round(&mut self) {
+    pub fn run_round(&mut self) -> bool {
         let accepted_proposals = self.get_accepted_proposals();
-        for (elf, move_to) in accepted_proposals {
+        for (elf, move_to) in &accepted_proposals {
             self.move_elf(&elf, &move_to);
         }
         let new_last = self.check_order.pop_front().unwrap();
         self.check_order.push_back(new_last);
+        return accepted_proposals.len() == 0;
     }
 
     pub fn get_accepted_proposals(&self) -> HashMap<Point,Point> {
