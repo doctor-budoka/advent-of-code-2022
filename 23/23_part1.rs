@@ -21,12 +21,11 @@ fn main() {
             elves.add_elf(&this_point);
         }
     }
-    elves.render_map();
     println!("Input read. Simulating elf moves...");
 
     for _ in 0..10 {
         elves.run_round();
-        elves.render_map();
     }
 
+    println!("Number of empty tiles in bounding box: {}", elves.count_empty_tiles());
 } 

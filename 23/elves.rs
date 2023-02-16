@@ -125,4 +125,10 @@ impl Elves {
         }
         println!("");
     }
+
+    pub fn count_empty_tiles(&self) -> StdInt {
+        let num_elves = self.map.len() as StdInt;
+        let num_tiles = (self.max_x.unwrap() - self.min_x.unwrap() + 1) * (self.max_y.unwrap() - self.min_y.unwrap() + 1);
+        return num_tiles - num_elves;
+    }
 }
