@@ -1,6 +1,9 @@
 use std::io::stdout;
 use std::collections::HashMap;
 use std::io::Write;
+use std::char;
+use std::rc::Rc;
+use std::cell::RefCell;
 use space::{Point,Direction,StdInt};
 
 #[derive(Debug,Copy,Clone)]
@@ -29,7 +32,7 @@ impl Tile {
 
 #[derive(Debug)]
 pub struct Valley {
-    map: HashMap<Point, Tile>,
+    map: HashMap<Point, Rc<RefCell<Vec<Tile>>>>,
     min_x: Option<StdInt>,
     max_x: Option<StdInt>,
     min_y: Option<StdInt>,
@@ -48,8 +51,13 @@ impl Valley {
     }
 
     pub fn add_tile(&mut self, point: &Point, tile: &Tile) {
-        self.map.insert(*point, *tile);
+        if !self.map.contains_key(point) {
+            self.map.insert(*point, Rc::new(RefCell::new(Vec::new())));
+        }
         self.update_bounds(point);
+        let boxed_contents = self.map.get(point).unwrap();
+        let mut contents = boxed_contents.as_ref().borrow_mut();
+        contents.push(*tile);
     }
 
     pub fn update_bounds(&mut self, new_point: &Point) {
@@ -76,10 +84,16 @@ impl Valley {
         for j in y_start..=y_end {
             for i in x_start..=x_end {
                 let this_point: Point = Point::new(i, j);
-                let char_to_print = match self.map.get(&this_point) {
-                    Some(tile) => tile.to_char(),
-                    None => '.',
-                };
+                let position = self.map.get(&this_point);
+                let char_to_print: char;
+                if let Some(boxed_contents) = position {
+                    let contents = boxed_contents.as_ref().borrow();
+                    let num_blizzards = contents.len();
+                    char_to_print = if num_blizzards > 1 {char::from_digit(num_blizzards as u32, 10).unwrap()} else {contents[0].to_char()};
+                }
+                else {
+                    char_to_print = '.';
+                }
                 print!("{}", char_to_print);
             }
             print!("\n");
