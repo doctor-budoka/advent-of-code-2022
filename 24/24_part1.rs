@@ -22,4 +22,7 @@ fn main() {
     }
     println!("Input read.");
     valley.render();
+
+    valley.move_blizzards();
+    valley.render();
 } 

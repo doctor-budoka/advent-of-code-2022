@@ -6,7 +6,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use space::{Point,Direction,StdInt};
 
-#[derive(Debug,Copy,Clone)]
+#[derive(Debug,Copy,Clone,PartialEq)]
 pub enum Tile {
     Wall,
     Blizzard(Direction),
@@ -73,6 +73,69 @@ impl Valley {
         if (self.max_y == None) || (self.max_y.unwrap() < new_point.y) {
             self.max_y = Some(new_point.y);
         } 
+    }
+
+    pub fn move_blizzards(&mut self) {
+        let mut new_map: HashMap<Point, Rc<RefCell<Vec<Tile>>>> = HashMap::new();
+        for (point, boxed_blizzards) in &self.map {
+            // let boxed_contents = self.map.get(&point).unwrap();
+            let contents = boxed_blizzards.as_ref().borrow();
+            for tile in contents.iter() {
+                if *tile == Tile::Wall {
+                    new_map.insert(*point, Rc::new(RefCell::new(vec![*tile])));
+                    continue;
+                }
+                let new_position = self.find_new_blizzard_pos(&point, tile);
+
+                if !new_map.contains_key(&new_position) {
+                    new_map.insert(new_position, Rc::new(RefCell::new(Vec::new())));
+                }
+                let boxed_contents = new_map.get(&new_position).unwrap();
+                let mut contents = boxed_contents.as_ref().borrow_mut();
+                contents.push(*tile);
+            }
+        }
+        self.map = new_map;
+    }
+
+    pub fn find_new_blizzard_pos(&self, point: &Point, blizzard: &Tile) -> Point {
+        if let Tile::Blizzard(direction) = blizzard {
+            let attempted_position: Point = *point + Point::from_direction(&direction);
+            let returned_position: Point;
+            if (self.min_x == None) | (self.max_x == None) | (self.min_y == None) | (self.max_y == None) {
+                unreachable!();
+            }
+            else if attempted_position.x <= self.min_x.unwrap() {
+                returned_position = Point::new(self.max_x.unwrap() - 1, attempted_position.y);
+            }
+            else if attempted_position.x >= self.max_x.unwrap() {
+                returned_position = Point::new(self.min_x.unwrap() + 1, attempted_position.y);
+            }
+            else if attempted_position.y <= self.min_y.unwrap() {
+                returned_position = Point::new(attempted_position.x, self.max_y.unwrap() - 1);
+            }
+            else if attempted_position.y >= self.max_y.unwrap() {
+                returned_position = Point::new(attempted_position.x, self.min_y.unwrap() + 1);
+            }
+            else {
+                returned_position =  attempted_position;
+            }
+            if self.check_point_in_bounds(&returned_position) {
+                return returned_position;
+            }
+            else {
+                panic!("The new position should be in bounds: {}", returned_position);
+            }
+        }
+        else {panic!("find_blizzard_pos should only have blizzard inputs");}
+    }
+
+    pub fn check_point_in_bounds(&self, point: &Point) -> bool {
+        return match (self.max_x, self.min_x, self.max_y, self.min_y) {
+            (Some(x_max), Some(x_min), Some(y_max), Some(y_min)) => (point.x < x_max) & (point.x > x_min) & (point.y < y_max) & (point.y > y_min),
+            (None, None, None, None) => false,
+            _ => unreachable!(),
+        };
     }
 
     pub fn render(&self) {
