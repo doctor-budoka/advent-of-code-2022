@@ -23,6 +23,6 @@ fn main() {
     println!("Input read.");
     valley.render();
 
-    valley.move_blizzards();
-    valley.render();
+    let new_valley = valley.move_blizzards();
+    new_valley.render();
 } 

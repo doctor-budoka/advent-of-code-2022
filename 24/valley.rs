@@ -75,7 +75,7 @@ impl Valley {
         } 
     }
 
-    pub fn move_blizzards(&mut self) {
+    pub fn move_blizzards(&mut self) -> Self {
         let mut new_map: HashMap<Point, Rc<RefCell<Vec<Tile>>>> = HashMap::new();
         for (point, boxed_blizzards) in &self.map {
             // let boxed_contents = self.map.get(&point).unwrap();
@@ -95,7 +95,7 @@ impl Valley {
                 contents.push(*tile);
             }
         }
-        self.map = new_map;
+        return Self {map: new_map, min_x: self.min_x, max_x: self.max_x, min_y: self.min_y, max_y: self.max_y} 
     }
 
     pub fn find_new_blizzard_pos(&self, point: &Point, blizzard: &Tile) -> Point {
