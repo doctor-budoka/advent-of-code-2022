@@ -32,11 +32,11 @@ impl Tile {
 
 #[derive(Debug)]
 pub struct Valley {
-    map: HashMap<Point, Rc<RefCell<Vec<Tile>>>>,
-    min_x: Option<StdInt>,
-    max_x: Option<StdInt>,
-    min_y: Option<StdInt>,
-    max_y: Option<StdInt>,
+    pub map: HashMap<Point, Rc<RefCell<Vec<Tile>>>>,
+    pub min_x: Option<StdInt>,
+    pub max_x: Option<StdInt>,
+    pub min_y: Option<StdInt>,
+    pub max_y: Option<StdInt>,
 }
 
 impl Valley {
@@ -75,10 +75,9 @@ impl Valley {
         } 
     }
 
-    pub fn move_blizzards(&mut self) -> Self {
+    pub fn move_blizzards(&self) -> Self {
         let mut new_map: HashMap<Point, Rc<RefCell<Vec<Tile>>>> = HashMap::new();
         for (point, boxed_blizzards) in &self.map {
-            // let boxed_contents = self.map.get(&point).unwrap();
             let contents = boxed_blizzards.as_ref().borrow();
             for tile in contents.iter() {
                 if *tile == Tile::Wall {
@@ -98,9 +97,25 @@ impl Valley {
         return Self {map: new_map, min_x: self.min_x, max_x: self.max_x, min_y: self.min_y, max_y: self.max_y} 
     }
 
+    pub fn copy_valley(&self) -> Self {
+        let mut new_map: HashMap<Point, Rc<RefCell<Vec<Tile>>>> = HashMap::new();
+        for (point, boxed_blizzards) in &self.map {
+            let contents = boxed_blizzards.as_ref().borrow();
+            for tile in contents.iter() {
+                if !new_map.contains_key(&point) {
+                    new_map.insert(*point, Rc::new(RefCell::new(Vec::new())));
+                }
+                let boxed_contents = new_map.get(&point).unwrap();
+                let mut contents = boxed_contents.as_ref().borrow_mut();
+                contents.push(*tile);
+            }
+        }
+        return Self {map: new_map, min_x: self.min_x, max_x: self.max_x, min_y: self.min_y, max_y: self.max_y} 
+    }
+
     pub fn find_new_blizzard_pos(&self, point: &Point, blizzard: &Tile) -> Point {
         if let Tile::Blizzard(direction) = blizzard {
-            let attempted_position: Point = *point + Point::from_direction(&direction);
+            let attempted_position: Point = *point + Point::from_direction(&Some(*direction));
             let returned_position: Point;
             if (self.min_x == None) | (self.max_x == None) | (self.min_y == None) | (self.max_y == None) {
                 unreachable!();

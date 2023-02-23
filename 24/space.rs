@@ -12,12 +12,13 @@ pub enum Direction {
 }
 
 impl Direction {
-    pub fn get_directions() -> Vec<Self> {
+    pub fn get_directions() -> Vec<Option<Self>> {
         return vec![
-            Self::North,
-            Self::East,
-            Self::South,
-            Self::West,
+            Some(Self::North),
+            Some(Self::East),
+            Some(Self::South),
+            Some(Self::West),
+            None,
         ];
     }
 
@@ -53,12 +54,13 @@ impl Point {
     }
 
     #[allow(dead_code)]
-    pub fn from_direction(direction: &Direction) -> Self {
+    pub fn from_direction(direction: &Option<Direction>) -> Self {
         return match *direction {
-            Direction::North => Self::new(0, -1),
-            Direction::South => Self::new(0, 1),
-            Direction::West => Self::new(-1, 0),
-            Direction::East => Self::new(1, 0),
+            Some(Direction::North) => Self::new(0, -1),
+            Some(Direction::South) => Self::new(0, 1),
+            Some(Direction::West) => Self::new(-1, 0),
+            Some(Direction::East) => Self::new(1, 0),
+            None => Self::new(0, 0),
         }
     }
 
@@ -75,6 +77,10 @@ impl Point {
     #[allow(dead_code)]
     pub fn scalar_division(&self, scalar: StdInt) -> Self {
         return Self::new(self.x / scalar, self.y / scalar);
+    }
+
+    pub fn distance(&self, &other: &Self) -> StdInt {
+        return (*self - other).length();
     }
 }
 
