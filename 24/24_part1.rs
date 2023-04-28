@@ -35,15 +35,15 @@ fn main() {
     valley.render();
     println!("Start: {start}, End: {end}");
 
-    let shortest: StdInt = find_shortest_path_length(start, end, valley);
-    println!("Shortest path avoiding blizzards: {shortest}")
+    let shortest: PathPoint = find_shortest_path(start, end, valley);
+    println!("Shortest path avoiding blizzards: {}", shortest.steps_from_start);
 }
 
-fn find_shortest_path_length(start: Point, end: Point, valley: Valley) -> StdInt {
+fn find_shortest_path(start: Point, end: Point, valley: Valley) -> PathPoint {
     let start_path = PathPoint::new_start(&start, start.distance(&end));
     let valley_states = get_all_valley_states(valley);
-    let shortest_path = find_shortest_path(&start_path, end, valley_states);
-    return shortest_path.steps_from_start;
+    let (previous_points, final_pathpoint) = search_for_shortest_path(&start_path, end, valley_states);
+    return final_pathpoint;
 }
 
 pub fn gcd(x: StdInt, y: StdInt) -> StdInt {
@@ -68,7 +68,7 @@ pub fn gcd(x: StdInt, y: StdInt) -> StdInt {
 fn get_all_valley_states(initial_valley: Valley) -> Vec<Valley> {
     let valley_width: StdInt = initial_valley.max_x.unwrap() - initial_valley.min_x.unwrap() - 1;
     let valley_height: StdInt = initial_valley.max_y.unwrap() - initial_valley.min_y.unwrap() - 1;
-    let periodicity: StdInt = gcd(valley_height, valley_width);
+    let periodicity: StdInt = valley_height * valley_width / gcd(valley_height, valley_width);
 
     let mut states: Vec<Valley> = Vec::new();
     let mut current_state: Valley = initial_valley;
@@ -79,7 +79,7 @@ fn get_all_valley_states(initial_valley: Valley) -> Vec<Valley> {
     return states;
 }
 
-fn find_shortest_path(start: &PathPoint, end: Point, valley_states: Vec<Valley>) -> PathPoint {
+fn search_for_shortest_path(start: &PathPoint, end: Point, valley_states: Vec<Valley>) -> (HashMap<(usize, Point), PathPoint>, PathPoint)  {
     let mut queue: BinaryHeap<Reverse<PathPoint>> = BinaryHeap::new();
     let mut queued: HashSet<(usize, Point)> = HashSet::new();
     let mut explored: HashSet<(usize, Point)> = HashSet::new();
@@ -132,7 +132,7 @@ fn find_shortest_path(start: &PathPoint, end: Point, valley_states: Vec<Valley>)
             if best <= current_node.estimated_path_length() {break;}
         }
     }
-    return current_best_path.expect("We should have found at least one path to the end!");
+    return (previous, current_best_path.expect("We should have found at least one path to the end!"));
 }
 
 fn get_point_choices(current_point: &Point, next_state: &Valley) -> Vec<Point> {
