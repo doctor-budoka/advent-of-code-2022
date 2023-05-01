@@ -10,6 +10,9 @@ use space::{Direction,Point,StdInt};
 mod path;
 use path::PathPoint;
 
+const DEBUG: bool = false;
+const DISPLAY_PATH: bool = false;
+
 fn main() {
     let env_args: Vec<String> = env::args().collect();
     let file_name = &env_args[1];
@@ -43,7 +46,7 @@ fn find_shortest_path(start: Point, end: Point, valley: Valley) -> PathPoint {
     let start_path = PathPoint::new_start(&start, start.distance(&end));
     let valley_states = get_all_valley_states(valley);
     let (previous_points, final_pathpoint) = search_for_shortest_path(&start_path, end, &valley_states);
-    replay_path(&valley_states, previous_points, &final_pathpoint);
+    if DISPLAY_PATH {replay_path(&valley_states, previous_points, &final_pathpoint);}
     return final_pathpoint;
 }
 
@@ -113,13 +116,18 @@ fn search_for_shortest_path(start: &PathPoint, end: Point, valley_states: &Vec<V
             let this_state: (usize, Point) = (current_node.steps_from_start as usize % num_states , current_node.point);
             let point_choices: Vec<Point> = get_point_choices(&current_node.point, &next_valley_state);
             for point in point_choices {
-                if point == start.point {continue;}
                 let state: (usize, Point) = (next_valley_state_ind, point);
                 if !queued.contains(&state) && !explored.contains(&state) {
                     let new_path_point = PathPoint::new(&point, &current_node.steps_from_start + 1, point.distance(&end));
                     previous.insert(state, current_node);
                     queued.insert(state);
                     queue.push(Reverse(new_path_point));
+                }
+                if DEBUG {
+                    println!("Current step: {}", current_node.steps_from_start + 1);
+                    next_valley_state.render_with_party_position(Some(state.1));
+                    println!("{:?}, {:?}", this_state, state);
+                    println!("{:?}", queue);
                 }
             }
             explored.insert(this_state);
