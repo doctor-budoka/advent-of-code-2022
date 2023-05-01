@@ -38,17 +38,14 @@ fn main() {
     valley.render();
     println!("Start: {start}, End: {end}");
 
-    let mut total_time: StdInt = 0;
     let shortest_1: PathPoint = find_shortest_path(start, end, valley.copy_valley(), 0);
-    total_time += shortest_1.steps_from_start;
-    println!("Shortest path avoiding blizzards (first part answer): {}", shortest_1.steps_from_start);
+    println!("Shortest path avoiding blizzards (answer for part one): {}", shortest_1.steps_from_start);
+    
     let shortest_2: PathPoint = find_shortest_path(end, start, valley.copy_valley(), shortest_1.steps_from_start as usize);
-    total_time += shortest_2.steps_from_start;
     println!("Path back to start to get snacks: {}", shortest_2.steps_from_start);
+
     let shortest_3: PathPoint = find_shortest_path(start, end, valley.copy_valley(), shortest_2.steps_from_start as usize);
-    total_time += shortest_3.steps_from_start;
-    println!("Shortest path avoiding blizzards with snacks: {}", shortest_1.steps_from_start);
-    println!("Shortest total path (part 2 answer): {}", total_time);
+    println!("Shortest path avoiding blizzards with snacks (answer for part 2): {}", shortest_3.steps_from_start);
 }
 
 fn find_shortest_path(start: Point, end: Point, valley: Valley, start_state: usize) -> PathPoint {
