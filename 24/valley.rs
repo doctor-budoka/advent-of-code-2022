@@ -147,7 +147,7 @@ impl Valley {
 
     pub fn check_point_in_bounds(&self, point: &Point) -> bool {
         return match (self.max_x, self.min_x, self.max_y, self.min_y) {
-            (Some(x_max), Some(x_min), Some(y_max), Some(y_min)) => (point.x < x_max) & (point.x > x_min) & (point.y < y_max) & (point.y > y_min),
+            (Some(x_max), Some(x_min), Some(y_max), Some(y_min)) => (point.x <= x_max) & (point.x >= x_min) & (point.y <= y_max) & (point.y >= y_min),
             (None, None, None, None) => false,
             _ => unreachable!(),
         };
