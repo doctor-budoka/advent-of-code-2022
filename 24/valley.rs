@@ -154,24 +154,32 @@ impl Valley {
     }
 
     pub fn render(&self) {
+        self.render_with_party_position(None);
+    }
+
+    pub fn render_with_party_position(&self, party: Option<Point>) {
         let y_start = self.min_y.unwrap();
         let y_end = self.max_y.unwrap();
         let x_start = self.min_x.unwrap();
         let x_end = self.max_x.unwrap();
 
+        let party_point = if let Some(some_point) = party {some_point} else {Point::new(x_start - 1, y_start - 1)};
+
         for j in y_start..=y_end {
             for i in x_start..=x_end {
                 let this_point: Point = Point::new(i, j);
+                let party_here: bool = this_point == party_point;
                 let position = self.map.get(&this_point);
-                let char_to_print: char;
-                if let Some(boxed_contents) = position {
-                    let contents = boxed_contents.as_ref().borrow();
-                    let num_blizzards = contents.len();
-                    char_to_print = if num_blizzards > 1 {char::from_digit(num_blizzards as u32, 10).unwrap()} else {contents[0].to_char()};
-                }
-                else {
-                    char_to_print = '.';
-                }
+                let char_to_print: char = match (position, party_here) {
+                    (Some(_), true) => 'x',
+                    (None, true) => 'o',
+                    (None, false) => '.',
+                    (Some(boxed_contents), false) => {
+                        let contents = boxed_contents.as_ref().borrow();
+                        let num_blizzards = contents.len();
+                        if num_blizzards > 1 {char::from_digit(num_blizzards as u32, 10).unwrap()} else {contents[0].to_char()}
+                    },
+                };
                 print!("{}", char_to_print);
             }
             print!("\n");
