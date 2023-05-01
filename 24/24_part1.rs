@@ -38,14 +38,23 @@ fn main() {
     valley.render();
     println!("Start: {start}, End: {end}");
 
-    let shortest: PathPoint = find_shortest_path(start, end, valley);
-    println!("Shortest path avoiding blizzards: {}", shortest.steps_from_start);
+    let mut total_time: StdInt = 0;
+    let shortest_1: PathPoint = find_shortest_path(start, end, valley.copy_valley(), 0);
+    total_time += shortest_1.steps_from_start;
+    println!("Shortest path avoiding blizzards (first part answer): {}", shortest_1.steps_from_start);
+    let shortest_2: PathPoint = find_shortest_path(end, start, valley.copy_valley(), shortest_1.steps_from_start as usize);
+    total_time += shortest_2.steps_from_start;
+    println!("Path back to start to get snacks: {}", shortest_2.steps_from_start);
+    let shortest_3: PathPoint = find_shortest_path(start, end, valley.copy_valley(), shortest_2.steps_from_start as usize);
+    total_time += shortest_3.steps_from_start;
+    println!("Shortest path avoiding blizzards with snacks: {}", shortest_1.steps_from_start);
+    println!("Shortest total path (part 2 answer): {}", total_time);
 }
 
-fn find_shortest_path(start: Point, end: Point, valley: Valley) -> PathPoint {
+fn find_shortest_path(start: Point, end: Point, valley: Valley, start_state: usize) -> PathPoint {
     let start_path = PathPoint::new_start(&start, start.distance(&end));
     let valley_states = get_all_valley_states(valley);
-    let (previous_points, final_pathpoint) = search_for_shortest_path(&start_path, end, &valley_states);
+    let (previous_points, final_pathpoint) = search_for_shortest_path(&start_path, end, start_state, &valley_states);
     if DISPLAY_PATH {replay_path(&valley_states, previous_points, &final_pathpoint);}
     return final_pathpoint;
 }
@@ -83,7 +92,7 @@ fn get_all_valley_states(initial_valley: Valley) -> Vec<Valley> {
     return states;
 }
 
-fn search_for_shortest_path(start: &PathPoint, end: Point, valley_states: &Vec<Valley>) -> (HashMap<(usize, Point), PathPoint>, PathPoint)  {
+fn search_for_shortest_path(start: &PathPoint, end: Point, initial_valley_state: usize, valley_states: &Vec<Valley>) -> (HashMap<(usize, Point), PathPoint>, PathPoint)  {
     let mut queue: BinaryHeap<Reverse<PathPoint>> = BinaryHeap::new();
     let mut queued: HashSet<(usize, Point)> = HashSet::new();
     let mut explored: HashSet<(usize, Point)> = HashSet::new();
@@ -93,7 +102,7 @@ fn search_for_shortest_path(start: &PathPoint, end: Point, valley_states: &Vec<V
     let mut current_best_path: Option<PathPoint> = None;
 
     let num_states: usize = valley_states.len();
-    let mut current_node: PathPoint = *start;
+    let mut current_node: PathPoint = PathPoint::new(&start.point, initial_valley_state as StdInt, start.point.distance(&end));
     loop {
         // Update the best path if necessary
         if current_node.point == end {
