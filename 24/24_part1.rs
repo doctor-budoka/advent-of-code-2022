@@ -156,11 +156,11 @@ fn replay_path(valley_states: &Vec<Valley>, previous_points: HashMap<(usize, Poi
     let path_points: Vec<Point> = get_path_as_points(previous_points, final_pathpoint, num_states as usize);
     println!("{:?}", &path_points);
     println!("Total length of path: {}", &path_points.len());
-    // for (ind, point) in path_points.iter().enumerate() {
-    //     let valley_state_ind: usize = ind % num_states;
-    //     let valley_state: Valley = valley_states[valley_state_ind].copy_valley();
-
-    // }    
+    for (ind, point) in path_points.iter().enumerate() {
+        let valley_state_ind: usize = ind % num_states;
+        let valley_state: Valley = valley_states[valley_state_ind].copy_valley();
+        valley_state.render_with_party_position(Some(*point));
+    }    
 }
 
 fn get_path_as_points(previous_points: HashMap<(usize, Point), PathPoint>, final_pathpoint: &PathPoint, num_valley_states: usize) -> Vec<Point> {
