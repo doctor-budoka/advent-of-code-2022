@@ -142,9 +142,9 @@ fn get_point_choices(current_point: &Point, next_state: &Valley) -> Vec<Point> {
         let vector_dir: Point = Point::from_direction(&direction);
         let new_point: Point = *current_point + vector_dir;
 
-        match next_state.map.get(&new_point) {
-            None => choices.push(new_point),
-            Some(_) => (),
+        match (next_state.map.get(&new_point), next_state.check_point_in_bounds(&new_point)) {
+            (None, true) => choices.push(new_point),
+            (_, _) => (),
         };
     }
     return choices;
