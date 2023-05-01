@@ -42,7 +42,8 @@ fn main() {
 fn find_shortest_path(start: Point, end: Point, valley: Valley) -> PathPoint {
     let start_path = PathPoint::new_start(&start, start.distance(&end));
     let valley_states = get_all_valley_states(valley);
-    let (previous_points, final_pathpoint) = search_for_shortest_path(&start_path, end, valley_states);
+    let (previous_points, final_pathpoint) = search_for_shortest_path(&start_path, end, &valley_states);
+    replay_path(&valley_states, previous_points, &final_pathpoint);
     return final_pathpoint;
 }
 
@@ -79,7 +80,7 @@ fn get_all_valley_states(initial_valley: Valley) -> Vec<Valley> {
     return states;
 }
 
-fn search_for_shortest_path(start: &PathPoint, end: Point, valley_states: Vec<Valley>) -> (HashMap<(usize, Point), PathPoint>, PathPoint)  {
+fn search_for_shortest_path(start: &PathPoint, end: Point, valley_states: &Vec<Valley>) -> (HashMap<(usize, Point), PathPoint>, PathPoint)  {
     let mut queue: BinaryHeap<Reverse<PathPoint>> = BinaryHeap::new();
     let mut queued: HashSet<(usize, Point)> = HashSet::new();
     let mut explored: HashSet<(usize, Point)> = HashSet::new();
@@ -148,3 +149,34 @@ fn get_point_choices(current_point: &Point, next_state: &Valley) -> Vec<Point> {
     }
     return choices;
 }
+
+
+fn replay_path(valley_states: &Vec<Valley>, previous_points: HashMap<(usize, Point), PathPoint>, final_pathpoint: &PathPoint) {
+    let num_states: usize = valley_states.len();
+    let path_points: Vec<Point> = get_path_as_points(previous_points, final_pathpoint, num_states as usize);
+    println!("{:?}", &path_points);
+    println!("Total length of path: {}", &path_points.len());
+    // for (ind, point) in path_points.iter().enumerate() {
+    //     let valley_state_ind: usize = ind % num_states;
+    //     let valley_state: Valley = valley_states[valley_state_ind].copy_valley();
+
+    // }    
+}
+
+fn get_path_as_points(previous_points: HashMap<(usize, Point), PathPoint>, final_pathpoint: &PathPoint, num_valley_states: usize) -> Vec<Point> {
+    let mut current_pt: PathPoint = *final_pathpoint;
+    let mut output: Vec<Point> = vec![current_pt.point];
+
+    loop {
+        let current_ind: usize = (current_pt.steps_from_start as usize) % num_valley_states;
+        if !previous_points.contains_key(&(current_ind, current_pt.point)) {
+            break;
+        }
+        current_pt = previous_points[&(current_ind, current_pt.point)];
+        output.push(current_pt.point);
+    }
+    output.reverse();
+    return output;
+}
+
+
